@@ -686,6 +686,7 @@
     <module>performance</module>
     <module>algorithm</module>
     <module>adapter/avro</module>
+    <module>dataset</module>
   </modules>
 
   <profiles>

@@ -18,6 +18,8 @@
 #include "arrow/dataset/file_base.h"
 
 #include <algorithm>
+#include <memory>
+#include <utility>
 #include <vector>
 
 #include "arrow/dataset/dataset_internal.h"
@@ -277,5 +279,46 @@ Status WriteTask::CreateDestinationParentDir() const {
   return Status::OK();
 }
 
+Result<std::shared_ptr<SingleFileDataset>> SingleFileDataset::Make(std::shared_ptr<Schema> schema,
+                                                                   std::shared_ptr<Expression> root_partition,
+                                                                   std::string path,
+                                                                   std::shared_ptr<fs::FileSystem> fs,
+                                                                   std::shared_ptr<FileFormat> format) {
+  std::shared_ptr<FileSource> file = std::make_shared<FileSource>(path, fs.get());
+  return std::make_shared<SingleFileDataset>(schema, root_partition, file, fs, format);
+}
+
+Result<std::shared_ptr<SingleFileDataset>> SingleFileDataset::Make(std::shared_ptr<Schema> schema,
+                                                                   std::shared_ptr<Expression> root_partition,
+                                                                   std::shared_ptr<FileSource> file,
+                                                                   std::shared_ptr<fs::FileSystem> fs,
+                                                                   std::shared_ptr<FileFormat> format) {
+  return std::make_shared<SingleFileDataset>(schema, root_partition, file, fs, format);
+}
+
+SingleFileDataset::SingleFileDataset(std::shared_ptr<Schema> schema,
+                                     std::shared_ptr<Expression> root_partition,
+                                     std::shared_ptr<FileSource> file,
+                                     std::shared_ptr<fs::FileSystem> fs,
+                                     std::shared_ptr<FileFormat> format)
+    : Dataset(std::move(schema), std::move(root_partition)),
+      file_(std::move(file)), fs_(std::move(fs)), format_(std::move(format)){}
+
+FragmentIterator SingleFileDataset::GetFragmentsImpl(std::shared_ptr<ScanOptions> options) {
+  std::vector<std::shared_ptr<FileSource>> files({file_});
+  auto file_srcs_it = MakeVectorIterator(std::move(files));
+  auto file_src_to_fragment = [options, this](const std::shared_ptr<FileSource>& source)
+      -> Result<std::shared_ptr<Fragment>> {
+    ARROW_ASSIGN_OR_RAISE(std::shared_ptr<Fragment> fragment, format_->MakeFragment(*source, options))
+    return fragment;
+  };
+  return MakeMaybeMapIterator(file_src_to_fragment, std::move(file_srcs_it));
+}
+
+Result<std::shared_ptr<Dataset>> SingleFileDataset::ReplaceSchema(std::shared_ptr<Schema> schema) const {
+  RETURN_NOT_OK(CheckProjectable(*schema_, *schema));
+  return std::shared_ptr<Dataset>(
+      new SingleFileDataset(std::move(schema), partition_expression_, file_, fs_, format_));
+}
 }  // namespace dataset
 }  // namespace arrow

@@ -316,5 +316,38 @@ class ARROW_DS_EXPORT WritePlan {
   std::vector<std::string> paths;
 };
 
+class ARROW_DS_EXPORT SingleFileDataset : public Dataset {
+ public:
+  SingleFileDataset(std::shared_ptr<Schema> schema,
+                    std::shared_ptr<Expression> root_partition,
+                    std::shared_ptr<FileSource> file,
+                    std::shared_ptr<fs::FileSystem> fs,
+                    std::shared_ptr<FileFormat> format);
+
+
+  static Result<std::shared_ptr<SingleFileDataset>> Make(std::shared_ptr<Schema> schema,
+                                                         std::shared_ptr<Expression> root_partition,
+                                                         std::string path,
+                                                         std::shared_ptr<fs::FileSystem> fs,
+                                                         std::shared_ptr<FileFormat> format);
+
+  static Result<std::shared_ptr<SingleFileDataset>> Make(std::shared_ptr<Schema> schema,
+                                                         std::shared_ptr<Expression> root_partition,
+                                                         std::shared_ptr<FileSource> file,
+                                                         std::shared_ptr<fs::FileSystem> fs,
+                                                         std::shared_ptr<FileFormat> format);
+
+  std::string type_name() const override { return "single_file"; }
+  Result<std::shared_ptr<Dataset>> ReplaceSchema(std::shared_ptr<Schema> schema) const override;
+
+ protected:
+  FragmentIterator GetFragmentsImpl(std::shared_ptr<ScanOptions> options) override ;
+
+ private:
+  std::shared_ptr<FileSource> file_;
+  std::shared_ptr<fs::FileSystem> fs_;
+  std::shared_ptr<FileFormat> format_;
+};
+
 }  // namespace dataset
 }  // namespace arrow

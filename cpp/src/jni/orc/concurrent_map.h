@@ -22,6 +22,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "jni.h"
 #include "arrow/util/macros.h"
 
 namespace arrow {

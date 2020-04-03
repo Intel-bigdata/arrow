@@ -323,6 +323,20 @@ static const std::string& PathOf(const std::shared_ptr<Fragment>& fragment) {
 class TestFileSystemDataset : public ::testing::Test,
                               public MakeFileSystemDatasetMixin {};
 
+class TestSingleFileDataset : public ::testing::Test {
+ public:
+  void MakeSingleFileDataset(const std::string& path) {
+    auto format = std::make_shared<DummyFileFormat>();
+    ASSERT_OK_AND_ASSIGN(dataset_,
+                         SingleFileDataset::Make(schema({}), scalar(true),
+                                                 std::make_shared<FileSource>(path, fs_.get()), fs_, format));
+  }
+
+  std::shared_ptr<fs::FileSystem> fs_;
+  std::shared_ptr<Dataset> dataset_;
+  std::shared_ptr<ScanOptions> options_ = ScanOptions::Make(schema({}));
+};
+
 static std::vector<std::string> PathsOf(const FragmentVector& fragments) {
   std::vector<std::string> paths(fragments.size());
   std::transform(fragments.begin(), fragments.end(), paths.begin(), PathOf);

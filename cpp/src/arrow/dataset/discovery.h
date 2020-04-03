@@ -232,5 +232,27 @@ class ARROW_DS_EXPORT FileSystemDatasetFactory : public DatasetFactory {
   FileSystemFactoryOptions options_;
 };
 
+class ARROW_DS_EXPORT SingleFileDatasetFactory : public DatasetFactory {
+ public:
+
+  static Result<std::shared_ptr<DatasetFactory>> Make(std::string path,
+                                                      std::shared_ptr<fs::FileSystem> fs,
+                                                      std::shared_ptr<FileFormat> format);
+
+  Result<std::vector<std::shared_ptr<Schema>>> InspectSchemas(
+      InspectOptions options) override;
+
+  Result<std::shared_ptr<Dataset>> Finish(FinishOptions options) override;
+
+ protected:
+  SingleFileDatasetFactory(std::shared_ptr<FileSource> file, std::shared_ptr<fs::FileSystem> fs,
+      std::shared_ptr<FileFormat> format);
+
+ private:
+  std::shared_ptr<FileSource> file_;
+  std::shared_ptr<fs::FileSystem> fs_;
+  std::shared_ptr<FileFormat> format_;
+};
+
 }  // namespace dataset
 }  // namespace arrow
