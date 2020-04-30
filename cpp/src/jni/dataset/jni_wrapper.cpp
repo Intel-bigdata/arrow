@@ -251,51 +251,51 @@ void releaseFilterInput(jbyteArray condition_arr, jbyte* condition_bytes, JNIEnv
 }
 
 // fixme in development. Not all node types considered.
-std::shared_ptr<arrow::dataset::Expression> translateNode(types::TreeNode node, JNIEnv* env) {
+std::shared_ptr<arrow::dataset::Expression> translateNode(arrow::dataset::types::TreeNode node, JNIEnv* env) {
   if (node.has_fieldnode()) {
-    const types::FieldNode& f_node = node.fieldnode();
+    const arrow::dataset::types::FieldNode& f_node = node.fieldnode();
     const std::string& name = f_node.name();
     return std::make_shared<arrow::dataset::FieldExpression>(name);
   }
   if (node.has_intnode()) {
-    const types::IntNode& int_node = node.intnode();
+    const arrow::dataset::types::IntNode& int_node = node.intnode();
     int32_t val = int_node.value();
     return std::make_shared<arrow::dataset::ScalarExpression>(std::make_shared<arrow::Int32Scalar>(val));
   }
   if (node.has_longnode()) {
-    const types::LongNode& long_node = node.longnode();
+    const arrow::dataset::types::LongNode& long_node = node.longnode();
     int64_t val = long_node.value();
     return std::make_shared<arrow::dataset::ScalarExpression>(std::make_shared<arrow::Int64Scalar>(val));
   }
   if (node.has_floatnode()) {
-    const types::FloatNode& float_node = node.floatnode();
+    const arrow::dataset::types::FloatNode& float_node = node.floatnode();
     float_t val = float_node.value();
     return std::make_shared<arrow::dataset::ScalarExpression>(std::make_shared<arrow::FloatScalar>(val));
   }
   if (node.has_doublenode()) {
-    const types::DoubleNode& double_node = node.doublenode();
+    const arrow::dataset::types::DoubleNode& double_node = node.doublenode();
     double_t val = double_node.value();
     return std::make_shared<arrow::dataset::ScalarExpression>(std::make_shared<arrow::DoubleScalar>(val));
   }
   if (node.has_booleannode()) {
-    const types::BooleanNode& boolean_node = node.booleannode();
+    const arrow::dataset::types::BooleanNode& boolean_node = node.booleannode();
     bool val = boolean_node.value();
     return std::make_shared<arrow::dataset::ScalarExpression>(std::make_shared<arrow::BooleanScalar>(val));
   }
   if (node.has_andnode()) {
-    const types::AndNode& and_node = node.andnode();
-    const types::TreeNode& left_arg = and_node.leftarg();
-    const types::TreeNode& right_arg = and_node.rightarg();
+    const arrow::dataset::types::AndNode& and_node = node.andnode();
+    const arrow::dataset::types::TreeNode& left_arg = and_node.leftarg();
+    const arrow::dataset::types::TreeNode& right_arg = and_node.rightarg();
     return std::make_shared<arrow::dataset::AndExpression>(translateNode(left_arg, env), translateNode(right_arg, env));
   }
   if (node.has_ornode()) {
-    const types::OrNode& or_node = node.ornode();
-    const types::TreeNode& left_arg = or_node.leftarg();
-    const types::TreeNode& right_arg = or_node.rightarg();
+    const arrow::dataset::types::OrNode& or_node = node.ornode();
+    const arrow::dataset::types::TreeNode& left_arg = or_node.leftarg();
+    const arrow::dataset::types::TreeNode& right_arg = or_node.rightarg();
     return std::make_shared<arrow::dataset::OrExpression>(translateNode(left_arg, env), translateNode(right_arg, env));
   }
   if (node.has_cpnode()) {
-    const types::ComparisonNode& cp_node = node.cpnode();
+    const arrow::dataset::types::ComparisonNode& cp_node = node.cpnode();
     const std::string& op_name = cp_node.opname();
     arrow::compute::CompareOperator op;
     if (op_name == "equal") {
@@ -313,20 +313,20 @@ std::shared_ptr<arrow::dataset::Expression> translateNode(types::TreeNode node, 
       env->ThrowNew(illegal_argument_exception_class, error_message.c_str());
       return nullptr; // unreachable
     }
-    const types::TreeNode& left_arg = cp_node.leftarg();
-    const types::TreeNode& right_arg = cp_node.rightarg();
+    const arrow::dataset::types::TreeNode& left_arg = cp_node.leftarg();
+    const arrow::dataset::types::TreeNode& right_arg = cp_node.rightarg();
     return std::make_shared<arrow::dataset::ComparisonExpression>(op,
         translateNode(left_arg, env), translateNode(right_arg, env));
   }
   if (node.has_notnode()) {
-    const types::NotNode& not_node = node.notnode();
-    const ::types::TreeNode& child = not_node.args();
+    const arrow::dataset::types::NotNode& not_node = node.notnode();
+    const ::arrow::dataset::types::TreeNode& child = not_node.args();
     std::shared_ptr<arrow::dataset::Expression> translatedChild = translateNode(child, env);
     return std::make_shared<arrow::dataset::NotExpression>(translatedChild);
   }
   if (node.has_isvalidnode()) {
-    const types::IsValidNode& is_valid_node = node.isvalidnode();
-    const ::types::TreeNode& child = is_valid_node.args();
+    const arrow::dataset::types::IsValidNode& is_valid_node = node.isvalidnode();
+    const ::arrow::dataset::types::TreeNode& child = is_valid_node.args();
     std::shared_ptr<arrow::dataset::Expression> translatedChild = translateNode(child, env);
     return std::make_shared<arrow::dataset::IsValidExpression>(translatedChild);
   }
@@ -335,8 +335,8 @@ std::shared_ptr<arrow::dataset::Expression> translateNode(types::TreeNode node, 
   return nullptr; // unreachable
 }
 
-std::shared_ptr<arrow::dataset::Expression> translateFilter(types::Condition condition, JNIEnv* env) {
-  const types::TreeNode& tree_node = condition.root();
+std::shared_ptr<arrow::dataset::Expression> translateFilter(arrow::dataset::types::Condition condition, JNIEnv* env) {
+  const arrow::dataset::types::TreeNode& tree_node = condition.root();
   return translateNode(tree_node, env);
 }
 
@@ -407,7 +407,7 @@ JNIEXPORT jlong JNICALL Java_org_apache_arrow_dataset_jni_JniWrapper_createScann
   // initialize filters
   jsize exprs_len = env->GetArrayLength(filter);
   jbyte* exprs_bytes = env->GetByteArrayElements(filter, 0);
-  types::Condition condition;
+  arrow::dataset::types::Condition condition;
   if (!ParseProtobuf(reinterpret_cast<uint8_t*>(exprs_bytes), exprs_len, &condition)) {
     releaseFilterInput(filter, exprs_bytes, env);
     std::string error_message = "bad protobuf message";

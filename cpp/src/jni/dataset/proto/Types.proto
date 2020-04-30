@@ -16,7 +16,7 @@
 // under the License.
 
 syntax = "proto2";
-package types;
+package arrow.dataset.types;
 
 option java_package = "org.apache.arrow.dataset";
 option java_outer_classname = "DatasetTypes";
