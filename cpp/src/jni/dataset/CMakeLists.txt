@@ -33,7 +33,7 @@ add_subdirectory(../../../../java/dataset ./java)
 
 set(ARROW_BUILD_STATIC OFF)
 
-set(ARROW_DATASET_JNI_LIBS arrow_dataset_static protobuf::libprotobuf)
+set(ARROW_DATASET_JNI_LIBS arrow_dataset_static ${ARROW_PROTOBUF_LIBPROTOBUF})
 set(PROTO_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR})
 set(PROTO_OUTPUT_FILES "${PROTO_OUTPUT_DIR}/Types.pb.cc")
 set(PROTO_OUTPUT_FILES ${PROTO_OUTPUT_FILES} "${PROTO_OUTPUT_DIR}/Types.pb.h")
