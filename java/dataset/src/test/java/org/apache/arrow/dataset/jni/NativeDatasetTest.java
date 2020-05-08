@@ -203,6 +203,42 @@ public class NativeDatasetTest {
     allocator.close();
   }
 
+  // TODO fix for empty projector. Currently empty projector is treated as projection on all available columns.
+  @Ignore
+  public void testScannerWithEmptyProjector() {
+    String path = sampleParquet();
+    RootAllocator allocator = new RootAllocator(Long.MAX_VALUE);
+    NativeDatasetFactory factory = new SingleFileDatasetFactory(
+        allocator, FileFormat.PARQUET, FileSystem.LOCAL,
+        path);
+    Schema schema = factory.inspect();
+    NativeDataset dataset = factory.finish(schema);
+    ScanOptions scanOptions = new ScanOptions(new String[]{}, Filter.EMPTY, 100);
+    Scanner scanner = dataset.newScan(scanOptions);
+    List<? extends ScanTask> scanTasks = collect(scanner.scan());
+    Assert.assertEquals(1, scanTasks.size());
+
+    ScanTask scanTask = scanTasks.get(0);
+    ScanTask.Itr itr = scanTask.scan();
+    VectorSchemaRoot vsr = null;
+    int rowCount = 0;
+    while (itr.hasNext()) {
+      // FIXME VectorSchemaRoot is not actually something ITERABLE. Using a reader convention instead.
+      vsr = itr.next();
+      rowCount += vsr.getRowCount();
+
+      // check if projector is applied
+      Assert.assertEquals("Schema<>",
+          vsr.getSchema().toString());
+    }
+    Assert.assertEquals(1, rowCount);
+
+    if (vsr != null) {
+      vsr.close();
+    }
+    allocator.close();
+  }
+
   @Ignore
   public void testFilter() {
     // todo
