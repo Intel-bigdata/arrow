@@ -28,13 +28,42 @@
 
 #include <libvmemcache.h>
 
+#include<sys/statfs.h>
+#include "plasma/tools/tinyxml2.h"
+using namespace tinyxml2;
+
 #define CACHE_MAX_SIZE (1024 * 1024 * 1024L)
 #define CACHE_EXTENT_SIZE 512
 
 namespace plasma {
 
+boolean detectInitailPath() {
+  XMLDocument doc;
+  doc.LoadFile("persistent-memory.xml");
+  XMLElement *root = doc.RootElement();
+  XMLElement *numanode = root->FirstChildElement("numanode");
+  while(numanode) {
+    XMLElement* initialPath = numanode->FirstChildElement();
+    XMLElement* requiredSize = initialPath->NextSiblingElement();
+    unsigned long long reqSize = atoll(requiredSize->GetText());
+    const char* path = initialPath->GetText();
+    struct statfs pathInfo;
+    int retVal = statfs(path,&pathInfo);
+    if(retVal < 0) return false;
+    unsigned long long blockSize = pathInfo.f_bsize;
+    unsigned long long freeSize = pathInfo.f_bfree * blockSize;
+    if(freeSize < reqSize) return false;
+    numanode = numanode->NextSiblingElement();
+  }
+  return true;
+}
+
 // Connect here is like something initial
 Status VmemcacheStore::Connect(const std::string& endpoint) {
+  if(!detectInitailPath()) {
+      ARROW_LOG(FATAL)<<"Initial vmemcache failed!";
+      return Status::UnknownError("Initial vmemcache failed!");
+  }
   auto size_start = endpoint.find("size:") + 5;
   auto size_end = endpoint.size();
   std::string sizeStr = endpoint.substr(size_start, size_end);
