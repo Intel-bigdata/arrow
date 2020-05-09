@@ -39,7 +39,11 @@ namespace plasma {
 
 boolean detectInitailPath() {
   XMLDocument doc;
-  doc.LoadFile("persistent-memory.xml");
+  XMLError loaderr = doc.LoadFile("persistent-memory.xml");
+  if(loaderr!=0){
+    ARROW_LOG(FATAL)<<"error occurred when loading persistent-mermory.xml,XMLError num is"+loaderr;
+    return false;
+  }
   XMLElement *root = doc.RootElement();
   XMLElement *numanode = root->FirstChildElement("numanode");
   while(numanode) {
