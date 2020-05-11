@@ -104,6 +104,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     default:
       break;
   }
+  totalNumaNodes = numaNodeVt.size();
 
   for (int i = 0; i< numaNodeVt.size(); i++) {
     // initial vmemcache on numa node i
@@ -137,20 +138,20 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
 
     std::vector<int> cpus_in_node;
     numaThreadPool::getNumaNodeCpu(i, cpus_in_node);
-    std::vector<int> cpus_for_put(threadInPools);
-    for (int j = 0; j < threadInPools; j++) {
+    std::vector<int> cpus_for_put(nninfo.writePoolSize);
+    for (int j = 0; j < nninfo.writePoolSize; j++) {
       cpus_for_put[j] = cpus_in_node[j % cpus_in_node.size()];
     }
     std::shared_ptr<numaThreadPool> poolPut(
-        new numaThreadPool(i, threadInPools, cpus_for_put));
+        new numaThreadPool(i, nninfo.writePoolSize, cpus_for_put));
     putThreadPools.push_back(poolPut);
 
-    std::vector<int> cpus_for_get(threadInPools);
-    for (int j = 0; j < threadInPools; j++) {
-      cpus_for_get[j] = cpus_in_node[(j + threadInPools) % cpus_in_node.size()];
+    std::vector<int> cpus_for_get(nninfo.readPoolSize);
+    for (int j = 0; j < nninfo.readPoolSize; j++) {
+      cpus_for_get[j] = cpus_in_node[(j + nninfo.readPoolSize) % cpus_in_node.size()];
     }
     std::shared_ptr<numaThreadPool> poolGet(
-        new numaThreadPool(i, threadInPools, cpus_for_get));
+        new numaThreadPool(i, nninfo.readPoolSize, cpus_for_get));
     getThreadPools.push_back(poolGet);
 
     ARROW_LOG(DEBUG) << "initial vmemcache success!";
