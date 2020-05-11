@@ -29,6 +29,9 @@
 #include <libvmemcache.h>
 
 #include<sys/statfs.h>
+
+#include<vector>
+
 #include "plasma/tools/tinyxml2.h"
 using namespace tinyxml2;
 
@@ -37,53 +40,82 @@ using namespace tinyxml2;
 
 namespace plasma {
 
-boolean detectInitailPath() {
+struct numaNodeInfo
+{
+   std::string initialPath;
+   uint32_t numaNodeId;
+   uint32_t readPoolSize;
+   uint32_t writePoolSize;
+   uint64_t requiredSize;
+};
+
+
+int detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
   XMLDocument doc;
-  XMLError loaderr = doc.LoadFile("persistent-memory.xml");
+  XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
   if(loaderr!=0){
-    ARROW_LOG(FATAL)<<"error occurred when loading persistent-mermory.xml,XMLError num is"+loaderr;
-    return false;
+    return -1;
   }
   XMLElement *root = doc.RootElement();
   XMLElement *numanode = root->FirstChildElement("numanode");
   while(numanode) {
-    XMLElement* initialPath = numanode->FirstChildElement();
-    XMLElement* requiredSize = initialPath->NextSiblingElement();
-    unsigned long long reqSize = atoll(requiredSize->GetText());
-    const char* path = initialPath->GetText();
+    XMLElement* path = numanode->FirstChildElement();   
+    XMLElement* requiredSize = path->NextSiblingElement();
+    XMLElement* readPoolSize = requiredSize->NextSiblingElement();   
+    XMLElement* writePoolSize = readPoolSize->NextSiblingElement();
+
+    numaNodeInfo info;
     struct statfs pathInfo;
-    int retVal = statfs(path,&pathInfo);
-    if(retVal < 0) return false;
-    unsigned long long blockSize = pathInfo.f_bsize;
-    unsigned long long freeSize = pathInfo.f_bfree * blockSize;
-    if(freeSize < reqSize) return false;
+    int retVal = statfs(path, &pathInfo);
+    if(retVal < 0) return -2;
+    uint64_t blockSize = pathInfo.f_bsize;
+    uint64_t freeSize = pathInfo.f_bfree * blockSize;
+
+    info.initialPath = path->GetText();
+    info.numaNodeId = std::stoul(numanode->Attribute("id"));
+    info.readPoolSize = std::stoul(readPoolSize->GetText());
+    info.writePoolSize = std::stoul(writePoolSize->GetText());
+    info.requiredSize = std::stoull(requiredSize->GetText());
+    if(info.requiredSize == 0) info.requiredSize = CACHE_MAX_SIZE;
+    if(info.requiredSize > freeSize){
+      ARROW_LOG(WARNING) << "Failed to provide enough size for allocation";
+      ARROW_LOG(WARNING) << "directory" << info.initialPath << "will use max freesize: " << freeSize <<"B";
+      info.requiredSize = freeSize;
+    }
+    totalCacheSize += info.requiredSize;
+
+    numaNodeVt.push_back(info);
     numanode = numanode->NextSiblingElement();
   }
-  return true;
+  return 0;
 }
 
 // Connect here is like something initial
 Status VmemcacheStore::Connect(const std::string& endpoint) {
-  if(!detectInitailPath()) {
-      ARROW_LOG(FATAL)<<"Initial vmemcache failed!";
+  std::vector<numaNodeInfo> numaNodeVt;
+  switch (detectInitailPath(numaNodeVt))
+  {
+    case -1:
+      ARROW_LOG(FATAL)<<"error occurred when loading persistent-mermory.xml,XMLError num is" + loaderr + ".";
       return Status::UnknownError("Initial vmemcache failed!");
+    case -2:
+      ARROW_LOG(FATAL)<<"Directories not exist.";
+      return Status::UnknownError("Initial vmemcache failed!");
+    default:
+      break;
   }
-  auto size_start = endpoint.find("size:") + 5;
-  auto size_end = endpoint.size();
-  std::string sizeStr = endpoint.substr(size_start, size_end);
-  unsigned long long size = std::stoull(sizeStr);
-  if (size == 0) size = CACHE_MAX_SIZE;
-  totalCacheSize = size * totalNumaNodes;
-  ARROW_LOG(DEBUG) << "vmemcache size is " << size;
-  for (int i = 0; i < totalNumaNodes; i++) {
+
+  for (int i = 0; i< numaNodeVt.size(); i++) {
     // initial vmemcache on numa node i
+    numaNodeInfo nninfo = numaNodeVt[i];
     VMEMcache* cache = vmemcache_new();
     if (!cache) {
       ARROW_LOG(FATAL) << "Initial vmemcache failed!";
       return Status::UnknownError("Initial vmemcache failed!");
     }
-    // TODO: how to find path and bind numa?
-    std::string s = "/mnt/pmem" + std::to_string(i);
+    std::string path = nninfo.initialPath;
+    u_int64_t size = nninfo.requiredSize;
+
     ARROW_LOG(DEBUG) << "initial vmemcache on " << s << ", size" << size
                      << ", extent size" << CACHE_EXTENT_SIZE;
 
