@@ -69,6 +69,16 @@ class getParam {
 };
 #pragma pack(pop)
 
+struct numaNodeInfo
+{
+   std::string initialPath;
+   uint32_t numaNodeId;
+   uint32_t readPoolSize;
+   uint32_t writePoolSize;
+   uint64_t requiredSize;
+};
+
+
 class VmemcacheStore : public ExternalStore {
  public:
   VmemcacheStore() = default;
@@ -92,6 +102,8 @@ class VmemcacheStore : public ExternalStore {
   static std::string hex(char* id);
   Status RegisterEvictionPolicy(EvictionPolicy* eviction_policy) override;
   void Metrics(int64_t* memory_total, int64_t* memory_used) override;
+
+  bool detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt);
 
  private:
   void Evict(std::vector<ObjectID>& ids, std::vector<std::shared_ptr<Buffer>>& datas);

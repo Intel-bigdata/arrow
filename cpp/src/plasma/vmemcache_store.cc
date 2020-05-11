@@ -38,35 +38,24 @@
 #define CACHE_EXTENT_SIZE 512
 
 namespace plasma {
-
-struct numaNodeInfo
-{
-   std::string initialPath;
-   uint32_t numaNodeId;
-   uint32_t readPoolSize;
-   uint32_t writePoolSize;
-   uint64_t requiredSize;
-};
-
-
-bool detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
-  tinyxml2:: XMLDocument doc;
-  tinyxml2:: XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
-  if(loaderr!=0) {
-    ARROW_LOG(FATAL) << "Error occurred when loading persistent-mermory.xml,XMLError num is" + loaderr + ".";
+bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
+  tinyxml2::XMLDocument doc;
+  tinyxml2::XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
+  if(loaderr != tinyxml2::XMLError::XML_SUCCESS) {
+    ARROW_LOG(FATAL) << "Error occurred when loading persistent-mermory.xml,XMLError num is " << loaderr;
     return false;
   }
-  tinyxml2:: XMLElement *root = doc.RootElement();
-  tinyxml2:: XMLElement *numanode = root->FirstChildElement("numanode");
+  tinyxml2::XMLElement* root = doc.RootElement();
+  tinyxml2::XMLElement* numanode = root->FirstChildElement("numanode");
   while(numanode) {
-    tinyxml2:: XMLElement* path = numanode->FirstChildElement();   
-    tinyxml2:: XMLElement* requiredSize = path->NextSiblingElement();
-    tinyxml2:: XMLElement* readPoolSize = requiredSize->NextSiblingElement();   
-    tinyxml2:: XMLElement* writePoolSize = readPoolSize->NextSiblingElement();
+    tinyxml2::XMLElement* path = numanode->FirstChildElement();   
+    tinyxml2::XMLElement* requiredSize = path->NextSiblingElement();
+    tinyxml2::XMLElement* readPoolSize = requiredSize->NextSiblingElement();   
+    tinyxml2::XMLElement* writePoolSize = readPoolSize->NextSiblingElement();
 
     numaNodeInfo info;
     struct statfs pathInfo;
-    int retVal = statfs(path, &pathInfo);
+    int retVal = statfs(path->GetText(), &pathInfo);
     if(retVal < 0) {
       ARROW_LOG(FATAL) << "Directory: " << path << " not exist.";
       return false;
@@ -97,7 +86,7 @@ bool detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
 Status VmemcacheStore::Connect(const std::string& endpoint) {
   std::vector<numaNodeInfo> numaNodeVt;
   if(!detectInitailPath(numaNodeVt)) {
-    return Status::UnknownError("Initial vmemcache failed!");
+    return Status::UnknownError("Initial vmemcache failed 1111!");
   }
 
   totalNumaNodes = numaNodeVt.size();
@@ -107,7 +96,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     VMEMcache* cache = vmemcache_new();
     if (!cache) {
       ARROW_LOG(FATAL) << "Initial vmemcache failed!";
-      return Status::UnknownError("Initial vmemcache failed!");
+      return Status::UnknownError("Initial vmemcache failed! 2222");
     }
     std::string path = nninfo.initialPath;
     u_int64_t size = nninfo.requiredSize;
@@ -125,7 +114,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
       ARROW_LOG(FATAL) << "vmemcache_set_extent_size failed!";
     }
 
-    if (vmemcache_add(cache, s.c_str())) {
+    if (vmemcache_add(cache, path.c_str())) {
       ARROW_LOG(FATAL) << "Initial vmemcache failed!" << vmemcache_errormsg();
     }
 
