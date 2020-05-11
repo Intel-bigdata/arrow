@@ -38,7 +38,7 @@
 #define CACHE_EXTENT_SIZE 512
 
 namespace plasma {
-bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
+bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeInfos) {
   tinyxml2::XMLDocument doc;
   tinyxml2::XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
   if(loaderr != tinyxml2::XMLError::XML_SUCCESS) {
@@ -76,7 +76,7 @@ bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
     }
     totalCacheSize += info.requiredSize;
 
-    numaNodeVt.push_back(info);
+    numaNodeInfos.push_back(info);
     numanode = numanode->NextSiblingElement();
   }
   return true;
@@ -84,15 +84,15 @@ bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
 
 // Connect here is like something initial
 Status VmemcacheStore::Connect(const std::string& endpoint) {
-  std::vector<numaNodeInfo> numaNodeVt;
-  if(!detectInitailPath(numaNodeVt)) {
+  std::vector<numaNodeInfo> numaNodeInfos;
+  if(!detectInitailPath(numaNodeInfos)) {
     return Status::UnknownError("Initial vmemcache failed 1111!");
   }
 
-  totalNumaNodes = numaNodeVt.size();
+  totalNumaNodes = numaNodeInfos.size();
   for (int i = 0; i < totalNumaNodes; i++) {
     // initial vmemcache on numa node i
-    numaNodeInfo nninfo = numaNodeVt[i];
+    numaNodeInfo nninfo = numaNodeInfos[i];
     VMEMcache* cache = vmemcache_new();
     if (!cache) {
       ARROW_LOG(FATAL) << "Initial vmemcache failed!";
