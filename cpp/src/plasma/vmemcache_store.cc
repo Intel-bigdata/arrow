@@ -28,12 +28,11 @@
 
 #include <libvmemcache.h>
 
-#include<sys/statfs.h>
+#include <sys/statfs.h>
 
-#include<vector>
+#include <vector>
 
 #include "plasma/tools/tinyxml2.h"
-using namespace tinyxml2;
 
 #define CACHE_MAX_SIZE (1024 * 1024 * 1024L)
 #define CACHE_EXTENT_SIZE 512
@@ -51,19 +50,19 @@ struct numaNodeInfo
 
 
 boolean detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
-  XMLDocument doc;
-  XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
+  tinyxml2:: XMLDocument doc;
+  tinyxml2:: XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
   if(loaderr!=0) {
     ARROW_LOG(FATAL) << "Error occurred when loading persistent-mermory.xml,XMLError num is" + loaderr + ".";
     return false;
   }
-  XMLElement *root = doc.RootElement();
-  XMLElement *numanode = root->FirstChildElement("numanode");
+  tinyxml2:: XMLElement *root = doc.RootElement();
+  tinyxml2:: XMLElement *numanode = root->FirstChildElement("numanode");
   while(numanode) {
-    XMLElement* path = numanode->FirstChildElement();   
-    XMLElement* requiredSize = path->NextSiblingElement();
-    XMLElement* readPoolSize = requiredSize->NextSiblingElement();   
-    XMLElement* writePoolSize = readPoolSize->NextSiblingElement();
+    tinyxml2:: XMLElement* path = numanode->FirstChildElement();   
+    tinyxml2:: XMLElement* requiredSize = path->NextSiblingElement();
+    tinyxml2:: XMLElement* readPoolSize = requiredSize->NextSiblingElement();   
+    tinyxml2:: XMLElement* writePoolSize = readPoolSize->NextSiblingElement();
 
     numaNodeInfo info;
     struct statfs pathInfo;
@@ -276,7 +275,7 @@ Status VmemcacheStore::Put(const std::vector<ObjectID>& ids,
       }
     }));
   }
-
+totalCacheSize
   for (int i = 0; i < (int)results.size(); i++) {
     if (results[i].get() != 0) ARROW_LOG(WARNING) << "Put " << i << " failed";
   }
@@ -323,7 +322,7 @@ Status VmemcacheStore::Get(const std::vector<ObjectID>& ids,
   return Status::OK();
 }
 
-// not used
+// not usedtotalCacheSize
 Status VmemcacheStore::Get(const std::vector<ObjectID>& ids,
                            std::vector<std::shared_ptr<Buffer>> buffers) {
   auto tic = std::chrono::steady_clock::now();
@@ -419,12 +418,7 @@ void VmemcacheStore::Metrics(int64_t* memory_total, int64_t* memory_used) {
   *memory_total = totalCacheSize;
   int64_t memory_used_ = 0;
   for (int i = 0; i < totalNumaNodes; i++) {
-    int64_t tmp;
-    vmemcache_get_stat(caches[i], VMEMCACHE_STAT_POOL_SIZE_USED, &tmp, sizeof(tmp));
-    memory_used_ += tmp;
-  }
-  *memory_used = memory_used_;
-}
+    int64_t tmp;totalCacheSize
 
 REGISTER_EXTERNAL_STORE("vmemcache", VmemcacheStore);
 
