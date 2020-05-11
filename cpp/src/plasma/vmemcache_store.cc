@@ -50,11 +50,12 @@ struct numaNodeInfo
 };
 
 
-int detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
+boolean detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
   XMLDocument doc;
   XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
-  if(loaderr!=0){
-    return -1;
+  if(loaderr!=0) {
+    ARROW_LOG(FATAL) << "Error occurred when loading persistent-mermory.xml,XMLError num is" + loaderr + ".";
+    return false;
   }
   XMLElement *root = doc.RootElement();
   XMLElement *numanode = root->FirstChildElement("numanode");
@@ -67,7 +68,10 @@ int detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
     numaNodeInfo info;
     struct statfs pathInfo;
     int retVal = statfs(path, &pathInfo);
-    if(retVal < 0) return -2;
+    if(retVal < 0) {
+      ARROW_LOG(FATAL) << "Directory: " << path << " not exist.";
+      return false;
+    }
     uint64_t blockSize = pathInfo.f_bsize;
     uint64_t freeSize = pathInfo.f_bfree * blockSize;
 
@@ -79,7 +83,7 @@ int detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
     if(info.requiredSize == 0) info.requiredSize = CACHE_MAX_SIZE;
     if(info.requiredSize > freeSize){
       ARROW_LOG(WARNING) << "Failed to provide enough size for allocation";
-      ARROW_LOG(WARNING) << "directory" << info.initialPath << "will use max freesize: " << freeSize <<"B";
+      ARROW_LOG(WARNING) << "Directory: " << info.initialPath << "will use max freesize: " << freeSize <<"B";
       info.requiredSize = freeSize;
     }
     totalCacheSize += info.requiredSize;
@@ -87,26 +91,18 @@ int detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
     numaNodeVt.push_back(info);
     numanode = numanode->NextSiblingElement();
   }
-  return 0;
+  return true;
 }
 
 // Connect here is like something initial
 Status VmemcacheStore::Connect(const std::string& endpoint) {
   std::vector<numaNodeInfo> numaNodeVt;
-  switch (detectInitailPath(numaNodeVt))
-  {
-    case -1:
-      ARROW_LOG(FATAL)<<"error occurred when loading persistent-mermory.xml,XMLError num is" + loaderr + ".";
-      return Status::UnknownError("Initial vmemcache failed!");
-    case -2:
-      ARROW_LOG(FATAL)<<"Directories not exist.";
-      return Status::UnknownError("Initial vmemcache failed!");
-    default:
-      break;
+  if(!detectInitailPath(numaNodeVt)) {
+    return Status::UnknownError("Initial vmemcache failed!");
   }
-  totalNumaNodes = numaNodeVt.size();
 
-  for (int i = 0; i< numaNodeVt.size(); i++) {
+  totalNumaNodes = numaNodeVt.size();
+  for (int i = 0; i < totalNumaNodes; i++) {
     // initial vmemcache on numa node i
     numaNodeInfo nninfo = numaNodeVt[i];
     VMEMcache* cache = vmemcache_new();
