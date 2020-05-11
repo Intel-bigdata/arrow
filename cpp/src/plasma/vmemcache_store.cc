@@ -49,7 +49,7 @@ struct numaNodeInfo
 };
 
 
-boolean detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
+bool detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt) {
   tinyxml2:: XMLDocument doc;
   tinyxml2:: XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
   if(loaderr!=0) {
@@ -112,7 +112,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     std::string path = nninfo.initialPath;
     u_int64_t size = nninfo.requiredSize;
 
-    ARROW_LOG(DEBUG) << "initial vmemcache on " << s << ", size" << size
+    ARROW_LOG(DEBUG) << "initial vmemcache on " << path << ", size" << size
                      << ", extent size" << CACHE_EXTENT_SIZE;
 
     if (vmemcache_set_size(cache, size)) {
@@ -275,7 +275,6 @@ Status VmemcacheStore::Put(const std::vector<ObjectID>& ids,
       }
     }));
   }
-totalCacheSize
   for (int i = 0; i < (int)results.size(); i++) {
     if (results[i].get() != 0) ARROW_LOG(WARNING) << "Put " << i << " failed";
   }
@@ -418,7 +417,12 @@ void VmemcacheStore::Metrics(int64_t* memory_total, int64_t* memory_used) {
   *memory_total = totalCacheSize;
   int64_t memory_used_ = 0;
   for (int i = 0; i < totalNumaNodes; i++) {
-    int64_t tmp;totalCacheSize
+    int64_t tmp;
+    vmemcache_get_stat(caches[i], VMEMCACHE_STAT_POOL_SIZE_USED, &tmp, sizeof(tmp));
+    memory_used_ += tmp;
+  }
+  *memory_used = memory_used_;
+}
 
 REGISTER_EXTERNAL_STORE("vmemcache", VmemcacheStore);
 
