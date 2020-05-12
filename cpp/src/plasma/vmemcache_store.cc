@@ -30,54 +30,48 @@
 
 #include <sys/statfs.h>
 
-#include <vector>
+#include <map>
 
-#include "plasma/tools/tinyxml2.h"
+#include "plasma/tools/getProperties.h"
 
 #define CACHE_MAX_SIZE (1024 * 1024 * 1024L)
 #define CACHE_EXTENT_SIZE 512
 
 namespace plasma {
 bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeInfos) {
-  tinyxml2::XMLDocument doc;
-  tinyxml2::XMLError loaderr = doc.LoadFile("/tmp/persistent-memory.xml");
-  if(loaderr != tinyxml2::XMLError::XML_SUCCESS) {
-    ARROW_LOG(FATAL) << "Error occurred when loading persistent-mermory.xml,XMLError num is " << loaderr;
+  string path = "/tmp/persistent-memory.properties";
+  std::map<string, string> configMap;
+  if(!readConfig(path, configMap)){
+    ARROW_LOG(FATAL) << "Open persistent-memory.properties failed";
     return false;
   }
-  tinyxml2::XMLElement* root = doc.RootElement();
-  tinyxml2::XMLElement* numanode = root->FirstChildElement("numanode");
-  while(numanode) {
-    tinyxml2::XMLElement* path = numanode->FirstChildElement();   
-    tinyxml2::XMLElement* requiredSize = path->NextSiblingElement();
-    tinyxml2::XMLElement* readPoolSize = requiredSize->NextSiblingElement();   
-    tinyxml2::XMLElement* writePoolSize = readPoolSize->NextSiblingElement();
-
-    numaNodeInfo info;
+  
+  int numanodeNum = configMap.size()/5;
+  for(int i = 1; i <= numanodeNum; i++){
+    uint64_t requiredSize = std::stoull(configMap["requiredSize" +  std::to_string(i)]);
+    string initialPath = configMap["initialPath" + std::to_string(i)];
+    ARROW_LOG(DEBUG) << initialPath;
     struct statfs pathInfo;
-    int retVal = statfs(path->GetText(), &pathInfo);
+    int retVal = statfs(initialPath.c_str(), &pathInfo);
     if(retVal < 0) {
-      ARROW_LOG(FATAL) << "Directory: " << path << " not exist.";
+      ARROW_LOG(FATAL) << "Directory: " << initialPath << " not exist.";
       return false;
     }
+    numaNodeInfo info;
+    info.requiredSize = requiredSize;
+    info.initialPath = initialPath;
     uint64_t blockSize = pathInfo.f_bsize;
     uint64_t freeSize = pathInfo.f_bfree * blockSize;
-
-    info.initialPath = path->GetText();
-    info.numaNodeId = std::stoul(numanode->Attribute("id"));
-    info.readPoolSize = std::stoul(readPoolSize->GetText());
-    info.writePoolSize = std::stoul(writePoolSize->GetText());
-    info.requiredSize = std::stoull(requiredSize->GetText());
-    if(info.requiredSize == 0) info.requiredSize = CACHE_MAX_SIZE;
-    if(info.requiredSize > freeSize){
+    if (requiredSize > freeSize){
       ARROW_LOG(WARNING) << "Failed to provide enough size for allocation";
       ARROW_LOG(WARNING) << "Directory: " << info.initialPath << "will use max freesize: " << freeSize <<"B";
       info.requiredSize = freeSize;
     }
+    info.numaNodeId = std::stoul(configMap["numanodeId" +  std::to_string(i)]);
+    info.readPoolSize = std::stoul(configMap["readPoolSize" +  std::to_string(i)]);
+    info.writePoolSize = std::stoul(configMap["writePoolSize" +  std::to_string(i)]);
     totalCacheSize += info.requiredSize;
-
     numaNodeInfos.push_back(info);
-    numanode = numanode->NextSiblingElement();
   }
   return true;
 }
@@ -86,7 +80,7 @@ bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeInfos)
 Status VmemcacheStore::Connect(const std::string& endpoint) {
   std::vector<numaNodeInfo> numaNodeInfos;
   if(!detectInitailPath(numaNodeInfos)) {
-    return Status::UnknownError("Initial vmemcache failed 1111!");
+    return Status::UnknownError("Initial vmemcache failed!");
   }
 
   totalNumaNodes = numaNodeInfos.size();
@@ -96,7 +90,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     VMEMcache* cache = vmemcache_new();
     if (!cache) {
       ARROW_LOG(FATAL) << "Initial vmemcache failed!";
-      return Status::UnknownError("Initial vmemcache failed! 2222");
+      return Status::UnknownError("Initial vmemcache failed!");
     }
     std::string path = nninfo.initialPath;
     u_int64_t size = nninfo.requiredSize;
