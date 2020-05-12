@@ -103,7 +103,7 @@ class VmemcacheStore : public ExternalStore {
   Status RegisterEvictionPolicy(EvictionPolicy* eviction_policy) override;
   void Metrics(int64_t* memory_total, int64_t* memory_used) override;
 
-  bool detectInitailPath(std::vector<numaNodeInfo> &numaNodeVt);
+  bool DetectInitailPath(std::vector<numaNodeInfo> &numaNodeVt);
 
  private:
   void Evict(std::vector<ObjectID>& ids, std::vector<std::shared_ptr<Buffer>>& datas);

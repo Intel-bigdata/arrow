@@ -38,40 +38,32 @@
 #define CACHE_EXTENT_SIZE 512
 
 namespace plasma {
-bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeInfos) {
+bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos) {
   string path = "/tmp/persistent-memory.properties";
   std::map<string, string> configMap;
-  if(!readConfig(path, configMap)){
+  if (!getProperties.readConfig(path, configMap)) {
     ARROW_LOG(FATAL) << "Open persistent-memory.properties failed";
     return false;
   }
-  
-  int numanodeNum = configMap.size()/5;
-  for(int i = 1; i <= numanodeNum; i++){
-    uint64_t requiredSize = std::stoull(configMap["requiredSize" +  std::to_string(i)]);
-    string initialPath = configMap["initialPath" + std::to_string(i)];
-    ARROW_LOG(DEBUG) << initialPath;
+
+  numaNodeInfos = getProperties.ConvertConfigMapToNumaNodeInfo(configMap);
+
+  for (numaNodeInfo info : numaNodeInfos) {
     struct statfs pathInfo;
-    int retVal = statfs(initialPath.c_str(), &pathInfo);
-    if(retVal < 0) {
-      ARROW_LOG(FATAL) << "Directory: " << initialPath << " not exist.";
+    int retVal = statfs(info.initialPath.c_str(), &pathInfo);
+    if (retVal < 0) {
+      ARROW_LOG(FATAL) << "Directory: " << info.initialPath << " not exist.";
       return false;
     }
-    numaNodeInfo info;
-    info.requiredSize = requiredSize;
-    info.initialPath = initialPath;
     uint64_t blockSize = pathInfo.f_bsize;
     uint64_t freeSize = pathInfo.f_bfree * blockSize;
-    if (requiredSize > freeSize){
+    if (info.requiredSize > freeSize) {
       ARROW_LOG(WARNING) << "Failed to provide enough size for allocation";
-      ARROW_LOG(WARNING) << "Directory: " << info.initialPath << "will use max freesize: " << freeSize <<"B";
+      ARROW_LOG(WARNING) << "Directory: " << info.initialPath
+                         << "will use max freesize: " << freeSize << "B";
       info.requiredSize = freeSize;
     }
-    info.numaNodeId = std::stoul(configMap["numanodeId" +  std::to_string(i)]);
-    info.readPoolSize = std::stoul(configMap["readPoolSize" +  std::to_string(i)]);
-    info.writePoolSize = std::stoul(configMap["writePoolSize" +  std::to_string(i)]);
     totalCacheSize += info.requiredSize;
-    numaNodeInfos.push_back(info);
   }
   return true;
 }
@@ -79,7 +71,7 @@ bool VmemcacheStore::detectInitailPath(std::vector<numaNodeInfo> &numaNodeInfos)
 // Connect here is like something initial
 Status VmemcacheStore::Connect(const std::string& endpoint) {
   std::vector<numaNodeInfo> numaNodeInfos;
-  if(!detectInitailPath(numaNodeInfos)) {
+  if (!DetectInitailPath(numaNodeInfos)) {
     return Status::UnknownError("Initial vmemcache failed!");
   }
 
