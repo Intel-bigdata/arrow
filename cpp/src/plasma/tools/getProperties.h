@@ -28,7 +28,7 @@ using namespace std;
 class getProperties {
  public:
   static bool readConfig(const string& filename, map<string, string>& configMap);
-  static std::vector<numaNodeInfo> ConvertConfigMapToNumaNodeInfo(
+  static std::vector<plasma::numaNodeInfo> ConvertConfigMapToNumaNodeInfo(
       map<string, string>& configMap);
 
  private:
@@ -38,13 +38,13 @@ class getProperties {
   static bool isSpace(char c);
 };
 
-std::vector<numaNodeInfo> getProperties::ConvertConfigMapToNumaNodeInfo(
+std::vector<plasma::numaNodeInfo> getProperties::ConvertConfigMapToNumaNodeInfo(
     map<string, string>& configMap) {
-  std::vector<numaNodeInfo> res;
+  std::vector<plasma::numaNodeInfo> res;
   int numanodeNum = configMap.size() / 5;
   for (int i = 1; i <= numanodeNum; i++) {
-    numaNodeInfo info;
-    info.requriedSize = std::stoull(configMap["requiredSize" + std::to_string(i)]);
+    plasma::numaNodeInfo info;
+    info.requiredSize = std::stoull(configMap["requiredSize" + std::to_string(i)]);
     info.initialPath = configMap["initialPath" + std::to_string(i)];
     info.numaNodeId = std::stoul(configMap["numanodeId" + std::to_string(i)]);
     info.readPoolSize = std::stoul(configMap["readPoolSize" + std::to_string(i)]);

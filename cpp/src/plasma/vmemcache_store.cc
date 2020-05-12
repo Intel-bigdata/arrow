@@ -41,12 +41,12 @@ namespace plasma {
 bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos) {
   string path = "/tmp/persistent-memory.properties";
   std::map<string, string> configMap;
-  if (!getProperties.readConfig(path, configMap)) {
+  if (!getProperties::readConfig(path, configMap)) {
     ARROW_LOG(FATAL) << "Open persistent-memory.properties failed";
     return false;
   }
 
-  numaNodeInfos = getProperties.ConvertConfigMapToNumaNodeInfo(configMap);
+  numaNodeInfos = getProperties::ConvertConfigMapToNumaNodeInfo(configMap);
 
   for (numaNodeInfo info : numaNodeInfos) {
     struct statfs pathInfo;

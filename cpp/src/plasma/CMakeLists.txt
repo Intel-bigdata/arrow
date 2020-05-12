@@ -133,7 +133,7 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   set_property(SOURCE dlmalloc.cc APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-conversion")
 endif()
 
-list(APPEND PLASMA_EXTERNAL_STORE_SOURCES "external_store.cc" "hash_table_store.cc" "vmemcache_store.cc" "tools/getProperties.cpp")
+list(APPEND PLASMA_EXTERNAL_STORE_SOURCES "external_store.cc" "hash_table_store.cc" "vmemcache_store.cc")
 link_libraries(vmemcache numa )
 
 # We use static libraries for the plasma-store-server executable so that it can
