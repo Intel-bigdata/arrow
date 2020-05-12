@@ -17,19 +17,24 @@
 
 #define _GET_PROPERTIES_H_
 #define COMMENT_CHAR '#'
+#define DEFALUT_CONFIG_MULTIPLIER 0.8
+#include <mntent.h>
+#include <sys/vfs.h>
 #include <fstream>
 #include <map>
 #include <string>
 #include <vector>
 #include "../plasma/vmemcache_store.h"
+#include "arrow/util/logging.h"
 
 using namespace std;
 
 class getProperties {
  public:
   static bool readConfig(const string& filename, map<string, string>& configMap);
-  static std::vector<plasma::numaNodeInfo> ConvertConfigMapToNumaNodeInfo(
+  static std::vector<plasma::numaNodeInfo> convertConfigMapToNumaNodeInfo(
       map<string, string>& configMap);
+  static bool getDefaultConfig(std::vector<plasma::numaNodeInfo>& numanodeInfos);
 
  private:
   static bool analyseLine(const string& line, string& key, string& value);
@@ -38,7 +43,43 @@ class getProperties {
   static bool isSpace(char c);
 };
 
-std::vector<plasma::numaNodeInfo> getProperties::ConvertConfigMapToNumaNodeInfo(
+bool getProperties::getDefaultConfig(std::vector<plasma::numaNodeInfo>& numanodeInfos) {
+  FILE* mount_table = NULL;
+  struct mntent* mount_entry;
+  mount_table = setmntent("/etc/mtab", "r");
+  if (!mount_table) {
+    ARROW_LOG(FATAL) << "set mount entry error";
+    return false;
+  }
+  int numaNodeId = 0;
+  while (1) {
+    if (mount_table) {
+      mount_entry = getmntent(mount_table);
+      if (!mount_entry) {
+        endmntent(mount_table);
+        break;
+      }
+    }
+    std::string mount_point = mount_entry->mnt_dir;
+    struct statfs pathInfo;
+    if (mount_point.find("/mnt/pmem") != -1) {
+      if (statfs(mount_point.c_str(), &pathInfo) < 0) {
+        return false;
+      }
+      plasma::numaNodeInfo info;
+      info.numaNodeId = numaNodeId;
+      info.initialPath = mount_point;
+      info.readPoolSize = 12;
+      info.writePoolSize = 12;
+      info.requiredSize = pathInfo.f_bsize * pathInfo.f_bfree * DEFALUT_CONFIG_MULTIPLIER;
+      numanodeInfos.push_back(info);
+      numaNodeId += 1;
+    }
+  }
+  return numanodeInfos.size() > 0;
+}
+
+std::vector<plasma::numaNodeInfo> getProperties::convertConfigMapToNumaNodeInfo(
     map<string, string>& configMap) {
   std::vector<plasma::numaNodeInfo> res;
   int numanodeNum = configMap.size() / 5;

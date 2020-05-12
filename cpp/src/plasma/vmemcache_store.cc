@@ -38,15 +38,14 @@
 #define CACHE_EXTENT_SIZE 512
 
 namespace plasma {
-bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos) {
-  string path = "/tmp/persistent-memory.properties";
+bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos, std::string configPath) {
   std::map<string, string> configMap;
-  if (!getProperties::readConfig(path, configMap)) {
-    ARROW_LOG(FATAL) << "Open persistent-memory.properties failed";
-    return false;
+  if (!getProperties::readConfig(configPath, configMap)) {
+    ARROW_LOG(WARNING) << "No persistent-memory.properties found, will use default settings";
+    return getProperties::getDefaultConfig(numaNodeInfos);
   }
 
-  numaNodeInfos = getProperties::ConvertConfigMapToNumaNodeInfo(configMap);
+  numaNodeInfos = getProperties::convertConfigMapToNumaNodeInfo(configMap);
 
   for (numaNodeInfo info : numaNodeInfos) {
     struct statfs pathInfo;
@@ -60,8 +59,9 @@ bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos)
     if (info.requiredSize > freeSize) {
       ARROW_LOG(WARNING) << "Failed to provide enough size for allocation";
       ARROW_LOG(WARNING) << "Directory: " << info.initialPath
-                         << "will use max freesize: " << freeSize << "B";
-      info.requiredSize = freeSize;
+                         << "will use max freesize * "
+                         <<DEFALUT_CONFIG_MULTIPLIER << " "<< freeSize << "B";
+      info.requiredSize = freeSize * DEFALUT_CONFIG_MULTIPLIER;
     }
     totalCacheSize += info.requiredSize;
   }
@@ -71,7 +71,12 @@ bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos)
 // Connect here is like something initial
 Status VmemcacheStore::Connect(const std::string& endpoint) {
   std::vector<numaNodeInfo> numaNodeInfos;
-  if (!DetectInitailPath(numaNodeInfos)) {
+  std::string configPath = "";
+  int configPathStart = endpoint.find("configPath");
+  if (configPathStart != -1){
+    configPath = endpoint.substr(configPathStart+11, endpoint.size());
+  }
+  if (!DetectInitailPath(numaNodeInfos, configPath)) {
     return Status::UnknownError("Initial vmemcache failed!");
   }
 
