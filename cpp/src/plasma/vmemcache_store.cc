@@ -38,14 +38,18 @@
 #define CACHE_EXTENT_SIZE 512
 
 namespace plasma {
-bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos, std::string configPath) {
-  std::map<string, string> configMap;
-  if (!getProperties::readConfig(configPath, configMap)) {
-    ARROW_LOG(WARNING) << "No persistent-memory.properties found, will use default settings";
-    return getProperties::getDefaultConfig(numaNodeInfos);
+bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos,
+                                       std::string configPath) {
+  std::map<std::string, std::string> configMap;
+  if (!GetProperties::readConfig(configPath, configMap)) {
+    ARROW_LOG(WARNING) << "No persistent-memory.properties found or "
+                       << "persistent-memory.properties is not in the right format, "
+                       << "please refer to persistent-memory.properties.template, "
+                       << "will use default settings.";
+    return GetProperties::getDefaultConfig(numaNodeInfos);
   }
 
-  numaNodeInfos = getProperties::convertConfigMapToNumaNodeInfo(configMap);
+  numaNodeInfos = GetProperties::convertConfigMapToNumaNodeInfo(configMap);
 
   for (numaNodeInfo info : numaNodeInfos) {
     struct statfs pathInfo;
@@ -59,8 +63,8 @@ bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos,
     if (info.requiredSize > freeSize) {
       ARROW_LOG(WARNING) << "Failed to provide enough size for allocation";
       ARROW_LOG(WARNING) << "Directory: " << info.initialPath
-                         << "will use max free_size * "
-                         <<DEFALUT_CONFIG_MULTIPLIER << " "<< freeSize << "B";
+                         << "will use max free_size * " << DEFALUT_CONFIG_MULTIPLIER
+                         << " " << freeSize << "B";
       info.requiredSize = freeSize * DEFALUT_CONFIG_MULTIPLIER;
     }
   }
@@ -72,14 +76,14 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
   std::vector<numaNodeInfo> numaNodeInfos;
   std::string configPath = "";
   int configPathStart = endpoint.find("configPath");
-  if (configPathStart != -1){
-    configPath = endpoint.substr(configPathStart+11, endpoint.size());
+  if (configPathStart != -1) {
+    configPath = endpoint.substr(configPathStart + 11, endpoint.size());
   }
   if (!DetectInitailPath(numaNodeInfos, configPath)) {
     return Status::UnknownError("Initial vmemcache failed!");
   }
 
-  if(numaNodeInfos.size() == 0) getProperties::getDefaultConfig(numaNodeInfos);
+  if (numaNodeInfos.size() == 0) GetProperties::getDefaultConfig(numaNodeInfos);
 
   totalNumaNodes = numaNodeInfos.size();
   for (int i = 0; i < totalNumaNodes; i++) {
@@ -97,7 +101,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
 
     ARROW_LOG(DEBUG) << "initial vmemcache on " << path << ", size" << size
                      << ", extent size" << CACHE_EXTENT_SIZE
-                     << ", numa mode id: " << nninfo.numaNodeId; 
+                     << ", numa mode id: " << nninfo.numaNodeId;
 
     if (vmemcache_set_size(cache, size)) {
       ARROW_LOG(DEBUG) << "vmemcache_set_size error:" << vmemcache_errormsg();
@@ -118,7 +122,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     std::vector<int> cpus_in_node;
     numaThreadPool::getNumaNodeCpu(i, cpus_in_node);
     std::vector<int> cpus_for_put(nninfo.writePoolSize);
-    for (int j = 0; j < nninfo.writePoolSize; j++) {
+    for (uint32_t j = 0; j < nninfo.writePoolSize; j++) {
       cpus_for_put[j] = cpus_in_node[j % cpus_in_node.size()];
     }
     std::shared_ptr<numaThreadPool> poolPut(
@@ -126,7 +130,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     putThreadPools.push_back(poolPut);
 
     std::vector<int> cpus_for_get(nninfo.readPoolSize);
-    for (int j = 0; j < nninfo.readPoolSize; j++) {
+    for (uint32_t j = 0; j < nninfo.readPoolSize; j++) {
       cpus_for_get[j] = cpus_in_node[(j + nninfo.readPoolSize) % cpus_in_node.size()];
     }
     std::shared_ptr<numaThreadPool> poolGet(
@@ -305,7 +309,7 @@ Status VmemcacheStore::Get(const std::vector<ObjectID>& ids,
   return Status::OK();
 }
 
-// not usedtotalCacheSize
+// not used
 Status VmemcacheStore::Get(const std::vector<ObjectID>& ids,
                            std::vector<std::shared_ptr<Buffer>> buffers) {
   auto tic = std::chrono::steady_clock::now();
