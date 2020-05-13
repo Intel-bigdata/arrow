@@ -59,11 +59,10 @@ bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos,
     if (info.requiredSize > freeSize) {
       ARROW_LOG(WARNING) << "Failed to provide enough size for allocation";
       ARROW_LOG(WARNING) << "Directory: " << info.initialPath
-                         << "will use max freesize * "
+                         << "will use max free_size * "
                          <<DEFALUT_CONFIG_MULTIPLIER << " "<< freeSize << "B";
       info.requiredSize = freeSize * DEFALUT_CONFIG_MULTIPLIER;
     }
-    totalCacheSize += info.requiredSize;
   }
   return true;
 }
@@ -80,10 +79,21 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     return Status::UnknownError("Initial vmemcache failed!");
   }
 
+  if(numaNodeInfos.size() == 0) getProperties::getDefaultConfig(numaNodeInfos);
+  for(int i = 0; i< numaNodeInfos.size();i++){
+    ARROW_LOG(DEBUG)<<numaNodeInfos[i].numaNodeId;
+    ARROW_LOG(DEBUG)<<numaNodeInfos[i].initialPath;
+    ARROW_LOG(DEBUG)<<numaNodeInfos[i].readPoolSize;
+    ARROW_LOG(DEBUG)<<numaNodeInfos[i].writePoolSize;
+    ARROW_LOG(DEBUG)<<numaNodeInfos[i].requiredSize;
+  }
+
   totalNumaNodes = numaNodeInfos.size();
   for (int i = 0; i < totalNumaNodes; i++) {
     // initial vmemcache on numa node i
     numaNodeInfo nninfo = numaNodeInfos[i];
+    totalCacheSize += nninfo.requiredSize;
+
     VMEMcache* cache = vmemcache_new();
     if (!cache) {
       ARROW_LOG(FATAL) << "Initial vmemcache failed!";
@@ -93,7 +103,8 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     u_int64_t size = nninfo.requiredSize;
 
     ARROW_LOG(DEBUG) << "initial vmemcache on " << path << ", size" << size
-                     << ", extent size" << CACHE_EXTENT_SIZE;
+                     << ", extent size" << CACHE_EXTENT_SIZE
+                     << ", numa mode id: " << nninfo.numaNodeId; 
 
     if (vmemcache_set_size(cache, size)) {
       ARROW_LOG(DEBUG) << "vmemcache_set_size error:" << vmemcache_errormsg();

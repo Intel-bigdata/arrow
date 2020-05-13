@@ -111,7 +111,6 @@ class VmemcacheStore : public ExternalStore {
   std::vector<std::shared_ptr<numaThreadPool>> putThreadPools;
   std::vector<std::shared_ptr<numaThreadPool>> getThreadPools;
   int totalNumaNodes = 2;
-  // int threadInPools = 12;
   int64_t totalCacheSize = 0;
   EvictionPolicy* evictionPolicy_;
 };

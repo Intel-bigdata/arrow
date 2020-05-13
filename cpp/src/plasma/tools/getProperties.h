@@ -83,7 +83,7 @@ std::vector<plasma::numaNodeInfo> getProperties::convertConfigMapToNumaNodeInfo(
     map<string, string>& configMap) {
   std::vector<plasma::numaNodeInfo> res;
   int numanodeNum = configMap.size() / 5;
-  for (int i = 1; i <= numanodeNum; i++) {
+  for (int i = 0; i < numanodeNum; i++) {
     plasma::numaNodeInfo info;
     info.requiredSize = std::stoull(configMap["requiredSize" + std::to_string(i)]);
     info.initialPath = configMap["initialPath" + std::to_string(i)];
