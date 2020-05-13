@@ -1,0 +1,32 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The ASF licenses this file to You under the Apache License, Version 2.0
+# (the "License"); you may not use this file except in compliance with
+# the License.  You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# Default persistent memory properties.
+# This is useful for setting default persistent memory settings.
+
+# Example
+# numanodeId0 = 0
+# initialPath0 = /mnt/pmem0
+# requiredSize0 = 1500000
+# readPoolSize0 = 12 
+# writePoolSize0 = 12
+
+# numanodeId1 = 1
+# initialPath1 = /mnt/pmem1
+# requiredSize1 = 1500000
+# readPoolSize1 = 12 
+# writePoolSize1 = 12
