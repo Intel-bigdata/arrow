@@ -80,13 +80,6 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
   }
 
   if(numaNodeInfos.size() == 0) getProperties::getDefaultConfig(numaNodeInfos);
-  for(int i = 0; i< numaNodeInfos.size();i++){
-    ARROW_LOG(DEBUG)<<numaNodeInfos[i].numaNodeId;
-    ARROW_LOG(DEBUG)<<numaNodeInfos[i].initialPath;
-    ARROW_LOG(DEBUG)<<numaNodeInfos[i].readPoolSize;
-    ARROW_LOG(DEBUG)<<numaNodeInfos[i].writePoolSize;
-    ARROW_LOG(DEBUG)<<numaNodeInfos[i].requiredSize;
-  }
 
   totalNumaNodes = numaNodeInfos.size();
   for (int i = 0; i < totalNumaNodes; i++) {
