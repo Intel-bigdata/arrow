@@ -21,6 +21,7 @@
 #include "plasma/eviction_policy.h"
 #include "plasma/external_store.h"
 #include "plasma/numaThreadPool.h"
+#include "tools/PlasmaProperties.h"
 
 #include <libvmemcache.h>
 
@@ -69,16 +70,6 @@ class getParam {
 };
 #pragma pack(pop)
 
-struct numaNodeInfo
-{
-   std::string initialPath;
-   uint32_t numaNodeId;
-   uint32_t readPoolSize;
-   uint32_t writePoolSize;
-   uint64_t requiredSize;
-};
-
-
 class VmemcacheStore : public ExternalStore {
  public:
   VmemcacheStore() = default;
@@ -103,7 +94,7 @@ class VmemcacheStore : public ExternalStore {
   Status RegisterEvictionPolicy(EvictionPolicy* eviction_policy) override;
   void Metrics(int64_t* memory_total, int64_t* memory_used) override;
 
-  bool DetectInitailPath(std::vector<numaNodeInfo> &numaNodeVt, std::string path);
+  bool DetectInitialPath(std::vector<plasma::numaNodeInfo> &numaNodeVt, std::string path);
 
  private:
   void Evict(std::vector<ObjectID>& ids, std::vector<std::shared_ptr<Buffer>>& datas);

@@ -16,22 +16,31 @@
 // under the License.
 
 
-#ifndef PLASMAPROPERTIES_H
-#define PLASMAPROPERTIES_H
+#ifndef PLASMA_PROPERTIES_H
+#define PLASMA_PROPERTIES_H
+
 #define COMMENT_CHAR '#'
 #define DEFALUT_CONFIG_MULTIPLIER 0.8
 
 #include <map>
 #include <string>
 #include <vector>
-#include "../plasma/vmemcache_store.h"
 
 namespace plasma {
+
+struct numaNodeInfo
+{
+   std::string initialPath;
+   uint32_t numaNodeId;
+   uint32_t readPoolSize;
+   uint32_t writePoolSize;
+   uint64_t requiredSize;
+};
 
 class PlasmaProperties {
  public:
   static bool parseConfig(const std::string& filename,
-                         std::map<std::string, std::string>& configMap);
+                          std::vector<plasma::numaNodeInfo> numaNodeInfos);
   static std::vector<plasma::numaNodeInfo> convertConfigMapToNumaNodeInfo(
       std::map<std::string, std::string>& configMap);
   static bool getDefaultConfig(std::vector<plasma::numaNodeInfo>& numanodeInfos);

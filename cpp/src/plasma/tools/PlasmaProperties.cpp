@@ -15,7 +15,7 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#include "PlasmaProperties.h"
+#include "plasma/tools/PlasmaProperties.h"
 #include <mntent.h>
 #include <sys/vfs.h>
 #include <fstream>
@@ -33,7 +33,7 @@ bool PlasmaProperties::getDefaultConfig(
     return false;
   }
   int numaNodeId = 0;
-  while (mount_entry = getmntent(mount_table)) {
+  while ((mount_entry = getmntent(mount_table)) != NULL) {
     if(!mount_entry){
         endmntent(mount_table);
         break;
@@ -79,7 +79,9 @@ std::vector<plasma::numaNodeInfo> PlasmaProperties::convertConfigMapToNumaNodeIn
 }
 
 bool PlasmaProperties::parseConfig(const std::string& filename,
-                                   std::map<std::string, std::string>& configMap) {
+                                   std::vector<plasma::numaNodeInfo> numaNodeInfos
+) {
+  std::map<std::string, std::string> configMap;
   configMap.clear();
   std::ifstream infile(filename.c_str());
   if (!infile) {
@@ -92,6 +94,16 @@ bool PlasmaProperties::parseConfig(const std::string& filename,
     }
   }
   if (configMap.size() % 5 != 0) return false;
+  int numanodeNum = configMap.size() / 5;
+  for (int i = 0; i < numanodeNum; i++) {
+    plasma::numaNodeInfo info;
+    info.requiredSize = std::stoull(configMap["requiredSize" + std::to_string(i)]);
+    info.initialPath = configMap["initialPath" + std::to_string(i)];
+    info.numaNodeId = std::stoul(configMap["numanodeId" + std::to_string(i)]);
+    info.readPoolSize = std::stoul(configMap["readPoolSize" + std::to_string(i)]);
+    info.writePoolSize = std::stoul(configMap["writePoolSize" + std::to_string(i)]);
+    numaNodeInfos.push_back(info);
+  }
   infile.close();
   return true;
 }

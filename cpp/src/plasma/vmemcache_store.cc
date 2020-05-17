@@ -38,18 +38,15 @@
 #define CACHE_EXTENT_SIZE 512
 
 namespace plasma {
-bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos,
+bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
                                        std::string configPath) {
-  std::map<std::string, std::string> configMap;
-  if (!PlasmaProperties::parseConfig(configPath, configMap)) {
+  if (!PlasmaProperties::parseConfig(configPath, numaNodeInfos)) {
     ARROW_LOG(WARNING) << "No persistent-memory.properties found or "
                        << "persistent-memory.properties is not in the right format, "
                        << "please refer to persistent-memory.properties.template, "
                        << "will use default settings.";
     return PlasmaProperties::getDefaultConfig(numaNodeInfos);
   }
-
-  numaNodeInfos = PlasmaProperties::convertConfigMapToNumaNodeInfo(configMap);
 
   for (numaNodeInfo info : numaNodeInfos) {
     struct statfs pathInfo;
@@ -79,7 +76,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
   if (configPathStart != -1) {
     configPath = endpoint.substr(configPathStart + 11, endpoint.size());
   }
-  if (!DetectInitailPath(numaNodeInfos, configPath)) {
+  if (!DetectInitialPath(numaNodeInfos, configPath)) {
     return Status::UnknownError("Initial vmemcache failed!");
   }
 
