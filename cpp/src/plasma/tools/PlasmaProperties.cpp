@@ -15,36 +15,16 @@
 // specific language governing permissions and limitations
 // under the License.
 
-#define _GET_PROPERTIES_H_
-#define COMMENT_CHAR '#'
-#define DEFALUT_CONFIG_MULTIPLIER 0.8
+#include "PlasmaProperties.h"
 #include <mntent.h>
 #include <sys/vfs.h>
 #include <fstream>
-#include <map>
-#include <string>
-#include <vector>
-#include "../plasma/vmemcache_store.h"
+#include "unistd.h"
 #include "arrow/util/logging.h"
 
 namespace plasma {
-
-class GetProperties {
- public:
-  static bool readConfig(const std::string& filename,
-                         std::map<std::string, std::string>& configMap);
-  static std::vector<plasma::numaNodeInfo> convertConfigMapToNumaNodeInfo(
-      std::map<std::string, std::string>& configMap);
-  static bool getDefaultConfig(std::vector<plasma::numaNodeInfo>& numanodeInfos);
-
- private:
-  static bool analyseLine(const std::string& line, std::string& key, std::string& value);
-  static void trim(std::string& str);
-  static bool isCommentChar(char c);
-  static bool isSpace(char c);
-};
-
-bool GetProperties::getDefaultConfig(std::vector<plasma::numaNodeInfo>& numanodeInfos) {
+bool PlasmaProperties::getDefaultConfig(
+    std::vector<plasma::numaNodeInfo>& numanodeInfos) {
   FILE* mount_table = NULL;
   struct mntent* mount_entry;
   mount_table = setmntent("/etc/mtab", "r");
@@ -53,13 +33,10 @@ bool GetProperties::getDefaultConfig(std::vector<plasma::numaNodeInfo>& numanode
     return false;
   }
   int numaNodeId = 0;
-  while (true) {
-    if (mount_table) {
-      mount_entry = getmntent(mount_table);
-      if (!mount_entry) {
+  while (mount_entry = getmntent(mount_table)) {
+    if(!mount_entry){
         endmntent(mount_table);
         break;
-      }
     }
     std::string mount_point = mount_entry->mnt_dir;
     struct statfs pathInfo;
@@ -85,7 +62,7 @@ bool GetProperties::getDefaultConfig(std::vector<plasma::numaNodeInfo>& numanode
   return numanodeInfos.size() > 0;
 }
 
-std::vector<plasma::numaNodeInfo> GetProperties::convertConfigMapToNumaNodeInfo(
+std::vector<plasma::numaNodeInfo> PlasmaProperties::convertConfigMapToNumaNodeInfo(
     std::map<std::string, std::string>& configMap) {
   std::vector<plasma::numaNodeInfo> res;
   int numanodeNum = configMap.size() / 5;
@@ -101,8 +78,8 @@ std::vector<plasma::numaNodeInfo> GetProperties::convertConfigMapToNumaNodeInfo(
   return res;
 }
 
-bool GetProperties::readConfig(const std::string& filename,
-                               std::map<std::string, std::string>& configMap) {
+bool PlasmaProperties::parseConfig(const std::string& filename,
+                                   std::map<std::string, std::string>& configMap) {
   configMap.clear();
   std::ifstream infile(filename.c_str());
   if (!infile) {
@@ -119,12 +96,12 @@ bool GetProperties::readConfig(const std::string& filename,
   return true;
 }
 
-bool GetProperties::isSpace(char c) {
+bool PlasmaProperties::isSpace(char c) {
   if (' ' == c || '\t' == c) return true;
   return false;
 }
 
-bool GetProperties::isCommentChar(char c) {
+bool PlasmaProperties::isCommentChar(char c) {
   if (c == COMMENT_CHAR) {
     return true;
   } else {
@@ -132,7 +109,7 @@ bool GetProperties::isCommentChar(char c) {
   }
 }
 
-void GetProperties::trim(std::string& str) {
+void PlasmaProperties::trim(std::string& str) {
   if (str.empty()) {
     return;
   }
@@ -156,8 +133,8 @@ void GetProperties::trim(std::string& str) {
   str = str.substr(start_pos, end_pos - start_pos + 1);
 }
 
-bool GetProperties::analyseLine(const std::string& line, std::string& key,
-                                std::string& value) {
+bool PlasmaProperties::analyseLine(const std::string& line, std::string& key,
+                                   std::string& value) {
   if (line.empty()) return false;
   int start_pos = 0, end_pos = line.size() - 1, pos;
   if ((pos = line.find(COMMENT_CHAR)) != -1) {
@@ -180,5 +157,4 @@ bool GetProperties::analyseLine(const std::string& line, std::string& key,
   trim(value);
   return true;
 }
-
 }  // namespace plasma

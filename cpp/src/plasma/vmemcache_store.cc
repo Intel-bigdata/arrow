@@ -32,7 +32,7 @@
 
 #include <map>
 
-#include "plasma/tools/getProperties.h"
+#include "plasma/tools/PlasmaProperties.h"
 
 #define CACHE_MAX_SIZE (1024 * 1024 * 1024L)
 #define CACHE_EXTENT_SIZE 512
@@ -41,15 +41,15 @@ namespace plasma {
 bool VmemcacheStore::DetectInitailPath(std::vector<numaNodeInfo>& numaNodeInfos,
                                        std::string configPath) {
   std::map<std::string, std::string> configMap;
-  if (!GetProperties::readConfig(configPath, configMap)) {
+  if (!PlasmaProperties::parseConfig(configPath, configMap)) {
     ARROW_LOG(WARNING) << "No persistent-memory.properties found or "
                        << "persistent-memory.properties is not in the right format, "
                        << "please refer to persistent-memory.properties.template, "
                        << "will use default settings.";
-    return GetProperties::getDefaultConfig(numaNodeInfos);
+    return PlasmaProperties::getDefaultConfig(numaNodeInfos);
   }
 
-  numaNodeInfos = GetProperties::convertConfigMapToNumaNodeInfo(configMap);
+  numaNodeInfos = PlasmaProperties::convertConfigMapToNumaNodeInfo(configMap);
 
   for (numaNodeInfo info : numaNodeInfos) {
     struct statfs pathInfo;
@@ -83,7 +83,7 @@ Status VmemcacheStore::Connect(const std::string& endpoint) {
     return Status::UnknownError("Initial vmemcache failed!");
   }
 
-  if (numaNodeInfos.size() == 0) GetProperties::getDefaultConfig(numaNodeInfos);
+  if (numaNodeInfos.size() == 0) PlasmaProperties::getDefaultConfig(numaNodeInfos);
 
   totalNumaNodes = numaNodeInfos.size();
   for (int i = 0; i < totalNumaNodes; i++) {
