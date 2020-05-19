@@ -19,14 +19,16 @@
 # This is useful for setting default persistent memory settings.
 
 # Example
-# numanodeId0 = 0
-# initialPath0 = /mnt/pmem0
-# requiredSize0 = 1500000
-# readPoolSize0 = 12 
-# writePoolSize0 = 12
+# totalNumaNodeNum = 2
 
-# numanodeId1 = 1
-# initialPath1 = /mnt/pmem1
+# numanodeId1 = 0
+# initialPath1 = /mnt/pmem0
 # requiredSize1 = 1500000
 # readPoolSize1 = 12 
 # writePoolSize1 = 12
+
+# numanodeId2 = 1
+# initialPath2 = /mnt/pmem1
+# requiredSize2 = 1500000
+# readPoolSize2 = 12 
+# writePoolSize2 = 12

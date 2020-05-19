@@ -19,93 +19,89 @@
 #include <mntent.h>
 #include <sys/vfs.h>
 #include <fstream>
+#include <string>
+#include "stdio.h"
+#include <sstream>
 #include "unistd.h"
 #include "arrow/util/logging.h"
 
 namespace plasma {
-bool PlasmaProperties::getDefaultConfig(
-    std::vector<plasma::numaNodeInfo>& numanodeInfos) {
-  FILE* mount_table = NULL;
-  struct mntent* mount_entry;
-  mount_table = setmntent("/etc/mtab", "r");
-  if (!mount_table) {
-    ARROW_LOG(FATAL) << "set mount entry error";
-    return false;
-  }
-  int numaNodeId = 0;
-  while ((mount_entry = getmntent(mount_table)) != NULL) {
-    if(!mount_entry){
-        endmntent(mount_table);
-        break;
-    }
-    std::string mount_point = mount_entry->mnt_dir;
-    struct statfs pathInfo;
-    if (mount_point.find("/mnt/pmem") != mount_point.npos) {
-      if (statfs(mount_point.c_str(), &pathInfo) < 0) {
-        return false;
-      }
-      plasma::numaNodeInfo info;
-      info.numaNodeId = numaNodeId;
-      info.initialPath = mount_point;
-      info.requiredSize = pathInfo.f_bsize * pathInfo.f_bfree * DEFALUT_CONFIG_MULTIPLIER;
-      numanodeInfos.push_back(info);
-      numaNodeId += 1;
-    }
-  }
 
+PlasmaProperties::PlasmaProperties(std::string argStr, std::string propertyFilePath) {
+  this->argsStr = argsStr;
+  this->propertyFilePath = propertyFilePath;
   uint32_t poolSize = sysconf(_SC_NPROCESSORS_ONLN) / numanodeInfos.size() / 2 / 2;
-  for (plasma::numaNodeInfo& n : numanodeInfos) {
-    n.readPoolSize = poolSize;
-    n.writePoolSize = poolSize;
-  }
-
-  return numanodeInfos.size() > 0;
+  defaultNumaNodeInfo.readPoolSize = poolSize;
+  defaultNumaNodeInfo.writePoolSize = poolSize;
+  defaultNumaNodeInfo.requiredSize = 5000000;
 }
 
-std::vector<plasma::numaNodeInfo> PlasmaProperties::convertConfigMapToNumaNodeInfo(
-    std::map<std::string, std::string>& configMap) {
-  std::vector<plasma::numaNodeInfo> res;
-  int numanodeNum = configMap.size() / 5;
-  for (int i = 0; i < numanodeNum; i++) {
-    plasma::numaNodeInfo info;
-    info.requiredSize = std::stoull(configMap["requiredSize" + std::to_string(i)]);
-    info.initialPath = configMap["initialPath" + std::to_string(i)];
-    info.numaNodeId = std::stoul(configMap["numanodeId" + std::to_string(i)]);
-    info.readPoolSize = std::stoul(configMap["readPoolSize" + std::to_string(i)]);
-    info.writePoolSize = std::stoul(configMap["writePoolSize" + std::to_string(i)]);
-    res.push_back(info);
-  }
-  return res;
+void PlasmaProperties::parseArgStr(std::string argStr) {
+  argStr = argStr.substr(12, argStr.length());
+  std::vector<std::string> numaNodeStrVector;
+  split(argsStr,numaNodeStrVector,'?');
+  for(std::string numaNodeStr: numaNodeStrVector){
+    std::vector<std::string> numaNodeElementStrVector;
+    split(numaNodeStr, numaNodeElementStrVector, ',');
+    for(std::string element:numaNodeElementStrVector){
+      int index = element.find(":");
+      this->argsMap[element.substr(0,index)] = element.substr(index+1,element.length());
+    }
+  } 
 }
 
-bool PlasmaProperties::parseConfig(const std::string& filename,
-                                   std::vector<plasma::numaNodeInfo> numaNodeInfos
-) {
-  std::map<std::string, std::string> configMap;
-  configMap.clear();
-  std::ifstream infile(filename.c_str());
-  if (!infile) {
-    return false;
-  }
+void PlasmaProperties::parsePropertyFilePath(std::string propertyFilePath) {
+  std::ifstream infile(propertyFilePath.c_str());
+  if (!infile) return;
   std::string line, key, value;
   while (std::getline(infile, line)) {
     if (analyseLine(line, key, value)) {
-      configMap[key] = value;
+      this->propertyFileMap[key] = value;
     }
   }
-  if (configMap.size() % 5 != 0) return false;
-  int numanodeNum = configMap.size() / 5;
-  for (int i = 0; i < numanodeNum; i++) {
-    plasma::numaNodeInfo info;
-    info.requiredSize = std::stoull(configMap["requiredSize" + std::to_string(i)]);
-    info.initialPath = configMap["initialPath" + std::to_string(i)];
-    info.numaNodeId = std::stoul(configMap["numanodeId" + std::to_string(i)]);
-    info.readPoolSize = std::stoul(configMap["readPoolSize" + std::to_string(i)]);
-    info.writePoolSize = std::stoul(configMap["writePoolSize" + std::to_string(i)]);
-    numaNodeInfos.push_back(info);
+}
+
+std::vector<plasma::numaNodeInfo>& PlasmaProperties::getNumaNodeInfos() {
+  parseArgStr(argsStr);
+  parsePropertyFilePath(propertyFilePath);
+  if(!buildNumaNodeInfos()) {
+    ARROW_LOG(FATAL)<< "InitialPath is not correct, please check.";
   }
-  infile.close();
-  return true;
+  return this->numanodeInfos;
+}
+
+std::string PlasmaProperties::getProperty(std::string key){
+  if(key.find("initialPath")!=key.npos) return "";
+  if(this->argsMap.find(key)!=this->argsMap.end()) return argsMap[key];
+  if(this->propertyFileMap.find(key)!=this->propertyFileMap.end()) return propertyFileMap[key];
+  if(key == "totalNumaNodeNum") return "";
+  return getDefaultProperty(key);
+}
+
+bool PlasmaProperties::buildNumaNodeInfos() {
+  this->totalNumaNodeNum = std::stoi(getProperty("totalNumaNodeNum"));
+  for(int i=1;i<=this->totalNumaNodeNum;i++){
+     plasma::numaNodeInfo info;
+     info.numaNodeId = std::stoul(this->getProperty("numaNodeId"+i));
+     info.initialPath = this->getProperty("initialPath"+i);
+     if(info.initialPath.length()==0){
+       this->numanodeInfos.clear();
+       return false;
+     }
+     info.readPoolSize =  std::stoul(this->getProperty("readPoolSize"+i));
+     info.writePoolSize = std::stoul(this->getProperty("writePoolSize"+i));
+     info.requiredSize = std::stoull(this->getProperty("requiredSize"+i));
+     this->numanodeInfos.push_back(info);
+  }
+  return totalNumaNodeNum == (int)numanodeInfos.size();
+}
+
+std::string PlasmaProperties::getDefaultProperty(std::string key){
+  if(key.find("numaNodeId")!=key.npos) return key.substr(9, key.length());
+  else if(key.find("readPoolSize")!=key.npos) return std::to_string(defaultNumaNodeInfo.readPoolSize);
+  else if(key.find("writePoolSize")!=key.npos) return std::to_string(defaultNumaNodeInfo.writePoolSize);
+  else if(key.find("requiredSize")!=key.npos) return std::to_string(defaultNumaNodeInfo.requiredSize);
+  else return "";
 }
 
 bool PlasmaProperties::isSpace(char c) {
@@ -168,5 +164,16 @@ bool PlasmaProperties::analyseLine(const std::string& line, std::string& key,
   }
   trim(value);
   return true;
+}
+
+void PlasmaProperties::split(const std::string& s,std::vector<std::string>& sv,const char flag){
+    sv.clear();
+    std::istringstream iss(s);
+    std::string temp;
+
+    while (getline(iss, temp, flag)) {
+        sv.push_back(temp);
+    }
+    return;
 }
 }  // namespace plasma

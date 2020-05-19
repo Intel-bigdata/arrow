@@ -39,14 +39,18 @@
 
 namespace plasma {
 bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
-                                       std::string configPath) {
-  if (!PlasmaProperties::parseConfig(configPath, numaNodeInfos)) {
-    ARROW_LOG(WARNING) << "No persistent-memory.properties found or "
-                       << "persistent-memory.properties is not in the right format, "
-                       << "please refer to persistent-memory.properties.template, "
-                       << "will use default settings.";
-    return PlasmaProperties::getDefaultConfig(numaNodeInfos);
+                                       std::string argStr) {
+  std::string propertyFilePath = "";
+  int index = argStr.find("propertyFilePath");
+  if(index!=-1){
+    int commaIndex = argStr.find_first_of(",");
+    propertyFilePath = argStr.substr(16, commaIndex);
+    argStr = argStr.substr(commaIndex+1,argStr.length());
   }
+  PlasmaProperties plasmaProperties(argStr, propertyFilePath);
+  numaNodeInfos = plasmaProperties.getNumaNodeInfos();
+
+  if (numaNodeInfos.size()==0) return false;
 
   for (numaNodeInfo info : numaNodeInfos) {
     struct statfs pathInfo;
@@ -70,18 +74,11 @@ bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
 
 // Connect here is like something initial
 Status VmemcacheStore::Connect(const std::string& endpoint) {
+  std::string argStr = endpoint.substr(12,endpoint.length());
   std::vector<numaNodeInfo> numaNodeInfos;
-  std::string configPath = "";
-  int configPathStart = endpoint.find("configPath");
-  if (configPathStart != -1) {
-    configPath = endpoint.substr(configPathStart + 11, endpoint.size());
-  }
-  if (!DetectInitialPath(numaNodeInfos, configPath)) {
+  if (!DetectInitialPath(numaNodeInfos, argStr)) {
     return Status::UnknownError("Initial vmemcache failed!");
   }
-
-  if (numaNodeInfos.size() == 0) PlasmaProperties::getDefaultConfig(numaNodeInfos);
-
   totalNumaNodes = numaNodeInfos.size();
   for (int i = 0; i < totalNumaNodes; i++) {
     // initial vmemcache on numa node i

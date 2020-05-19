@@ -39,17 +39,30 @@ struct numaNodeInfo
 
 class PlasmaProperties {
  public:
-  static bool parseConfig(const std::string& filename,
-                          std::vector<plasma::numaNodeInfo> numaNodeInfos);
-  static std::vector<plasma::numaNodeInfo> convertConfigMapToNumaNodeInfo(
-      std::map<std::string, std::string>& configMap);
-  static bool getDefaultConfig(std::vector<plasma::numaNodeInfo>& numanodeInfos);
+  PlasmaProperties(std::string argStr, std::string propertyFilePath);
+  PlasmaProperties() = default;
+  std::vector<plasma::numaNodeInfo>& getNumaNodeInfos();
 
  private:
-  static bool analyseLine(const std::string& line, std::string& key, std::string& value);
-  static void trim(std::string& str);
-  static bool isCommentChar(char c);
-  static bool isSpace(char c);
+  int totalNumaNodeNum = -1;
+  std::string argsStr="";
+  std::string propertyFilePath="";
+  std::map<std::string, std::string> argsMap;
+  std::map<std::string, std::string> propertyFileMap;
+  std::vector<plasma::numaNodeInfo> numanodeInfos;
+  plasma::numaNodeInfo defaultNumaNodeInfo;
+
+  void split(const std::string& s,std::vector<std::string>& sv,const char flag = ' ');
+  void parseArgStr(std::string argStr);
+  void parsePropertyFilePath(std::string propertyFilePath);
+  bool buildNumaNodeInfos();
+  std::string getProperty(std::string key);
+  std::string getDefaultProperty(std::string key);
+  
+  bool analyseLine(const std::string& line, std::string& key, std::string& value);
+  void trim(std::string& str);
+  bool isCommentChar(char c);
+  bool isSpace(char c);
 };
 
 }  // namespace plasma
