@@ -52,7 +52,7 @@ class PlasmaProperties {
   std::vector<plasma::numaNodeInfo> numanodeInfos;
   plasma::numaNodeInfo defaultNumaNodeInfo;
 
-  void split(const std::string& s,std::vector<std::string>& sv,const char flag = ' ');
+  void split(const std::string& s,std::vector<std::string>& sv,const char flag);
   void parseArgStr(std::string argStr);
   void parsePropertyFilePath(std::string propertyFilePath);
   bool buildNumaNodeInfos();
