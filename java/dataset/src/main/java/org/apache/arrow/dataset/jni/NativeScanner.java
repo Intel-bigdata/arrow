@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import org.apache.arrow.dataset.scanner.ScanTask;
 import org.apache.arrow.dataset.scanner.Scanner;
 import org.apache.arrow.util.SchemaUtils;
 import org.apache.arrow.vector.types.pojo.Schema;
@@ -29,7 +28,7 @@ import org.apache.arrow.vector.types.pojo.Schema;
 /**
  * Native implementation of {@link Scanner}.
  */
-public class NativeScanner implements Scanner {
+public class NativeScanner implements Scanner, AutoCloseable {
 
   private final NativeContext context;
   private final long scannerId;
@@ -40,7 +39,7 @@ public class NativeScanner implements Scanner {
   }
 
   @Override
-  public Iterable<? extends ScanTask> scan() {
+  public Iterable<? extends NativeScanTask> scan() {
     return Arrays.stream(JniWrapper.get().getScanTasksFromScanner(scannerId))
         .mapToObj(id -> new NativeScanTask(context, schema(), id))
         .collect(Collectors.toList());
@@ -56,7 +55,7 @@ public class NativeScanner implements Scanner {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     JniWrapper.get().closeScanner(scannerId);
   }
 }

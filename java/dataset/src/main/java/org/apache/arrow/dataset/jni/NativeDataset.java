@@ -19,7 +19,6 @@ package org.apache.arrow.dataset.jni;
 
 import org.apache.arrow.dataset.fragment.DataFragment;
 import org.apache.arrow.dataset.scanner.ScanOptions;
-import org.apache.arrow.dataset.scanner.Scanner;
 import org.apache.arrow.dataset.source.Dataset;
 
 /**
@@ -42,7 +41,7 @@ public class NativeDataset implements Dataset, AutoCloseable {
   }
 
   @Override
-  public Scanner newScan(ScanOptions options) {
+  public NativeScanner newScan(ScanOptions options) {
     long scannerId = JniWrapper.get().createScanner(datasetId, options.getColumns(),
         options.getFilter().toByteArray(), options.getBatchSize());
     return new NativeScanner(context, scannerId);
@@ -53,7 +52,7 @@ public class NativeDataset implements Dataset, AutoCloseable {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     JniWrapper.get().closeDataset(datasetId);
   }
 }

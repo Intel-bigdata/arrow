@@ -63,7 +63,7 @@ public class NativeDatasetFactory implements DatasetFactory, AutoCloseable {
   }
 
   @Override
-  public void close() throws Exception {
+  public void close() {
     JniWrapper.get().closeDatasetFactory(dataSourceDiscoveryId);
   }
 }
