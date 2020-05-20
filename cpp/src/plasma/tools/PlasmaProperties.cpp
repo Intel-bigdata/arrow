@@ -103,9 +103,10 @@ bool PlasmaProperties::buildNumaNodeInfos() {
 }
 
 std::string PlasmaProperties::getDefaultProperty(std::string key) {
-  if (key.find("numaNodeId") != key.npos)
-    return key.substr(9, key.length());
-  else if (key.find("readPoolSize") != key.npos)
+  if (key.find("numaNodeId") != key.npos) {
+    const int numaNodeIdStrEndIndex = 9;
+    return key.substr(numaNodeIdStrEndIndex, key.length());
+  } else if (key.find("readPoolSize") != key.npos)
     return std::to_string(defaultNumaNodeInfo.readPoolSize);
   else if (key.find("writePoolSize") != key.npos)
     return std::to_string(defaultNumaNodeInfo.writePoolSize);
