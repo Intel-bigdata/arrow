@@ -39,14 +39,14 @@ struct numaNodeInfo
 
 class PlasmaProperties {
  public:
-  PlasmaProperties(std::string argStr, std::string propertyFilePath);
+  PlasmaProperties(std::string& argStr, std::string& propertyFilePath);
   PlasmaProperties() = default;
   std::vector<plasma::numaNodeInfo>& getNumaNodeInfos();
 
  private:
   int totalNumaNodeNum = -1;
-  std::string argsStr="";
-  std::string propertyFilePath="";
+  std::string argsStr;
+  std::string propertyFilePath;
   std::map<std::string, std::string> argsMap;
   std::map<std::string, std::string> propertyFileMap;
   std::vector<plasma::numaNodeInfo> numanodeInfos;

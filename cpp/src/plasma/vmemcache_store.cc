@@ -39,7 +39,7 @@
 
 namespace plasma {
 bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
-                                       std::string argStr) {
+                                       std::string& argStr) {
   std::string propertyFilePath = "";
   int index = argStr.find("propertyFilePath");
   if(index!=-1){
@@ -47,9 +47,8 @@ bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
     propertyFilePath = argStr.substr(16, commaIndex);
     argStr = argStr.substr(commaIndex+1,argStr.length());
   }
-  PlasmaProperties plasmaProperties(argStr, propertyFilePath);
-  numaNodeInfos = plasmaProperties.getNumaNodeInfos();
-
+  PlasmaProperties *plasmaProperties = new PlasmaProperties(argStr, propertyFilePath);
+  numaNodeInfos = plasmaProperties->getNumaNodeInfos();
   if (numaNodeInfos.size()==0) return false;
 
   for (numaNodeInfo info : numaNodeInfos) {

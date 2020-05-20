@@ -21,13 +21,13 @@
 # Example
 # totalNumaNodeNum = 2
 
-# numanodeId1 = 0
+# numaNodeId1 = 0
 # initialPath1 = /mnt/pmem0
 # requiredSize1 = 1500000
 # readPoolSize1 = 12 
 # writePoolSize1 = 12
 
-# numanodeId2 = 1
+# numaNodeId2 = 1
 # initialPath2 = /mnt/pmem1
 # requiredSize2 = 1500000
 # readPoolSize2 = 12 
