@@ -226,6 +226,12 @@ if(ARROW_PLASMA_JAVA_CLIENT)
                           numa
                           )
   endif(APPLE)
+
+  install(TARGETS plasma_java ${INSTALL_IS_OPTIONAL}
+        RUNTIME DESTINATION ${RUNTIME_INSTALL_DIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 #
 # Unit tests
