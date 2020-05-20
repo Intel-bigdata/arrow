@@ -15,7 +15,6 @@
 // specific language governing permissions and limitations
 // under the License.
 
-
 #ifndef PLASMA_PROPERTIES_H
 #define PLASMA_PROPERTIES_H
 
@@ -28,13 +27,12 @@
 
 namespace plasma {
 
-struct numaNodeInfo
-{
-   std::string initialPath;
-   uint32_t numaNodeId;
-   uint32_t readPoolSize;
-   uint32_t writePoolSize;
-   uint64_t requiredSize;
+struct numaNodeInfo {
+  std::string initialPath;
+  uint32_t numaNodeId;
+  uint32_t readPoolSize;
+  uint32_t writePoolSize;
+  uint64_t requiredSize;
 };
 
 class PlasmaProperties {
@@ -52,13 +50,13 @@ class PlasmaProperties {
   std::vector<plasma::numaNodeInfo> numanodeInfos;
   plasma::numaNodeInfo defaultNumaNodeInfo;
 
-  void split(const std::string& s,std::vector<std::string>& sv,const char flag);
+  void split(const std::string& s, std::vector<std::string>& sv, const char flag);
   void parseArgStr(std::string argStr);
   void parsePropertyFilePath(std::string propertyFilePath);
   bool buildNumaNodeInfos();
   std::string getProperty(std::string key);
   std::string getDefaultProperty(std::string key);
-  
+
   bool analyseLine(const std::string& line, std::string& key, std::string& value);
   void trim(std::string& str);
   bool isCommentChar(char c);

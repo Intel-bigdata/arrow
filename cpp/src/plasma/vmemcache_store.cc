@@ -42,14 +42,14 @@ bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
                                        std::string& argStr) {
   std::string propertyFilePath = "";
   int index = argStr.find("propertyFilePath");
-  if(index!=-1){
+  if (index != -1) {
     int commaIndex = argStr.find_first_of(",");
     propertyFilePath = argStr.substr(16, commaIndex);
-    argStr = argStr.substr(commaIndex+1,argStr.length());
+    argStr = argStr.substr(commaIndex + 1, argStr.length());
   }
-  PlasmaProperties *plasmaProperties = new PlasmaProperties(argStr, propertyFilePath);
+  PlasmaProperties* plasmaProperties = new PlasmaProperties(argStr, propertyFilePath);
   numaNodeInfos = plasmaProperties->getNumaNodeInfos();
-  if (numaNodeInfos.size()==0) return false;
+  if (numaNodeInfos.size() == 0) return false;
 
   for (numaNodeInfo info : numaNodeInfos) {
     struct statfs pathInfo;
@@ -73,7 +73,7 @@ bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
 
 // Connect here is like something initial
 Status VmemcacheStore::Connect(const std::string& endpoint) {
-  std::string argStr = endpoint.substr(12,endpoint.length());
+  std::string argStr = endpoint.substr(12, endpoint.length());
   std::vector<numaNodeInfo> numaNodeInfos;
   if (!DetectInitialPath(numaNodeInfos, argStr)) {
     return Status::UnknownError("Initial vmemcache failed!");
