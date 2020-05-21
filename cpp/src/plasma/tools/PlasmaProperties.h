@@ -55,12 +55,8 @@ class PlasmaProperties {
   void parsePropertyFilePath(std::string propertyFilePath);
   bool buildNumaNodeInfos();
   std::string getProperty(std::string key);
-  std::string getDefaultProperty(std::string key);
 
-  bool analyseLine(const std::string& line, std::string& key, std::string& value);
-  void trim(std::string& str);
-  bool isCommentChar(char c);
-  bool isSpace(char c);
+  bool analyseLine(std::string& line, std::string& key, std::string& value);
 };
 
 }  // namespace plasma

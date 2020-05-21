@@ -266,6 +266,7 @@ else()
     BOOST_SOURCE_URL
     # These are trimmed boost bundles we maintain.
     # See cpp/build_support/trim-boost.sh
+    "https://github.com/jikunshang/boost/releases/download/boost-1.67.0/boost_1_67_0.tar.gz"
     "https://dl.bintray.com/ursalabs/arrow-boost/boost_${ARROW_BOOST_BUILD_VERSION_UNDERSCORES}.tar.gz"
     "https://dl.bintray.com/boostorg/release/${ARROW_BOOST_BUILD_VERSION}/source/boost_${ARROW_BOOST_BUILD_VERSION_UNDERSCORES}.tar.gz"
     "https://github.com/boostorg/boost/archive/boost-${ARROW_BOOST_BUILD_VERSION}.tar.gz"

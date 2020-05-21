@@ -50,6 +50,7 @@ set(PLASMA_SRCS
     malloc.cc
     plasma.cc
     protocol.cc
+    tools/PlasmaProperties.cpp
     ${PLASMA_IO_SRCS})
 
 set(PLASMA_STORE_SRCS
@@ -254,9 +255,10 @@ if(ARROW_BUILD_SHARED)
 else()
   set(PLASMA_TEST_LIBS plasma_static ${PLASMA_STATIC_LINK_LIBS})
 endif()
-
+     
+add_plasma_test(test/plasma_properties_tests EXTRA_LINK_LIBS ${PLASMA_TEST_LIBS})
 add_plasma_test(test/serialization_tests EXTRA_LINK_LIBS ${PLASMA_TEST_LIBS})
-add_plasma_test(test/client_tests
+add_plasma_test(test/client_tests 
                 EXTRA_LINK_LIBS
                 ${PLASMA_TEST_LIBS}
                 EXTRA_DEPENDENCIES

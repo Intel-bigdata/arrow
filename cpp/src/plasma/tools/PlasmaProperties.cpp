@@ -21,6 +21,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
+#include <boost/algorithm/string.hpp>
 #include "arrow/util/logging.h"
 #include "stdio.h"
 #include "unistd.h"
@@ -71,8 +72,20 @@ std::string PlasmaProperties::getProperty(std::string key) {
   if (this->propertyFileMap.find(key) != this->propertyFileMap.end())
     return propertyFileMap[key];
   if (key.find("initialPath") != key.npos) return "";
+
   if (key == "totalNumaNodeNum") return "0";
-  return getDefaultProperty(key);
+  if (key.find("numaNodeId") != key.npos) {
+    const int numaNodeIdStrEndIndex = 9;
+    return key.substr(numaNodeIdStrEndIndex, key.length());
+  }
+  if (key.find("readPoolSize") != key.npos)
+    return std::to_string(defaultNumaNodeInfo.readPoolSize);
+  if (key.find("writePoolSize") != key.npos)
+    return std::to_string(defaultNumaNodeInfo.writePoolSize);
+  if (key.find("requiredSize") != key.npos)
+    return std::to_string(defaultNumaNodeInfo.requiredSize);
+  else
+    return "";
 }
 
 bool PlasmaProperties::buildNumaNodeInfos() {
@@ -102,60 +115,10 @@ bool PlasmaProperties::buildNumaNodeInfos() {
   return totalNumaNodeNum == (int)numanodeInfos.size();
 }
 
-std::string PlasmaProperties::getDefaultProperty(std::string key) {
-  if (key.find("numaNodeId") != key.npos) {
-    const int numaNodeIdStrEndIndex = 9;
-    return key.substr(numaNodeIdStrEndIndex, key.length());
-  } else if (key.find("readPoolSize") != key.npos)
-    return std::to_string(defaultNumaNodeInfo.readPoolSize);
-  else if (key.find("writePoolSize") != key.npos)
-    return std::to_string(defaultNumaNodeInfo.writePoolSize);
-  else if (key.find("requiredSize") != key.npos)
-    return std::to_string(defaultNumaNodeInfo.requiredSize);
-  else
-    return "";
-}
-
-bool PlasmaProperties::isSpace(char c) {
-  if (' ' == c || '\t' == c) return true;
-  return false;
-}
-
-bool PlasmaProperties::isCommentChar(char c) {
-  if (c == COMMENT_CHAR) {
-    return true;
-  } else {
-    return false;
-  }
-}
-
-void PlasmaProperties::trim(std::string& str) {
-  if (str.empty()) {
-    return;
-  }
-  int i, start_pos, end_pos;
-  for (i = 0; i < (int)str.size(); ++i) {
-    if (!isSpace(str[i])) {
-      break;
-    }
-  }
-  if (i == (int)str.size()) {
-    str = "";
-    return;
-  }
-  start_pos = i;
-  for (i = (int)str.size() - 1; i >= 0; --i) {
-    if (!isSpace(str[i])) {
-      break;
-    }
-  }
-  end_pos = i;
-  str = str.substr(start_pos, end_pos - start_pos + 1);
-}
-
-bool PlasmaProperties::analyseLine(const std::string& line, std::string& key,
+bool PlasmaProperties::analyseLine(std::string& line, std::string& key,
                                    std::string& value) {
   if (line.empty()) return false;
+  boost::trim(line);
   int start_pos = 0, end_pos = line.size() - 1, pos;
   if ((pos = line.find(COMMENT_CHAR)) != -1) {
     if (0 == pos) {
@@ -170,11 +133,11 @@ bool PlasmaProperties::analyseLine(const std::string& line, std::string& key,
   key = new_line.substr(0, pos);
   value = new_line.substr(pos + 1, end_pos + 1 - (pos + 1));
 
-  trim(key);
+  boost::trim(key);
   if (key.empty()) {
     return false;
   }
-  trim(value);
+  boost::trim(value);
   return true;
 }
 

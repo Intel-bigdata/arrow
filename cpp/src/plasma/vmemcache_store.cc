@@ -62,8 +62,8 @@ bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
     uint64_t blockSize = pathInfo.f_bsize;
     uint64_t freeSize = pathInfo.f_bfree * blockSize;
     if (info.requiredSize > freeSize) {
-      ARROW_LOG(WARNING) << "Failed to provide enough size for allocation";
-      ARROW_LOG(WARNING) << "Directory: " << info.initialPath
+      ARROW_LOG(WARNING) << "Failed to provide enough size for allocation"
+                         << "Directory: " << info.initialPath
                          << "will use max free_size * " << DEFALUT_CONFIG_MULTIPLIER
                          << " " << freeSize << "B";
       info.requiredSize = freeSize * DEFALUT_CONFIG_MULTIPLIER;
