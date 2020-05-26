@@ -258,7 +258,7 @@ endif()
      
 add_plasma_test(test/plasma_properties_tests EXTRA_LINK_LIBS ${PLASMA_TEST_LIBS})
 add_plasma_test(test/serialization_tests EXTRA_LINK_LIBS ${PLASMA_TEST_LIBS})
-add_plasma_test(test/client_tests 
+add_plasma_test(test/client_tests
                 EXTRA_LINK_LIBS
                 ${PLASMA_TEST_LIBS}
                 EXTRA_DEPENDENCIES
