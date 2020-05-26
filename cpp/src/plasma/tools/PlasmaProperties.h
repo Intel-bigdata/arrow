@@ -37,7 +37,7 @@ struct numaNodeInfo {
 
 class PlasmaProperties {
  public:
-  PlasmaProperties(std::string& argStr, std::string& propertyFilePath);
+  PlasmaProperties(std::string& argStr_, std::string& propertyFilePath_);
   PlasmaProperties() = default;
   std::vector<plasma::numaNodeInfo>& getNumaNodeInfos();
 

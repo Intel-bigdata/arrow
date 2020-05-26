@@ -22,7 +22,6 @@
 #include "plasma/plasma.h"
 #include "plasma/protocol.h"
 #include "plasma/test_util.h"
-#define private public
 #include "plasma/tools/PlasmaProperties.h"
 
 namespace plasma {
@@ -45,27 +44,65 @@ TEST_F(TestPlasmaProperties, ParseArgStrTest) {
   std::string argStr =
       "totalNumaNodeNum:2,numaNodeId1:1,initialPath1:/mnt/"
       "pmem0,requiredSize1:15000000,readPoolSize1:12,writePoolSize1:12?numaNodeId2:2,"
-      "initialPath2:/mnt/pmem1,requiredSize2:1500000,readPoolSize2:12,writePoolSize2:12";
+      "initialPath2:/mnt/pmem1,requiredSize2:15000000,readPoolSize2:12,writePoolSize2:12";
   PlasmaProperties* p = new PlasmaProperties(argStr, propertyStr);
-  p->getNumaNodeInfos();
+  std::vector<plasma::numaNodeInfo> vector = p->getNumaNodeInfos();
+  ASSERT_EQ(vector[0].initialPath, "/mnt/pmem0");
+  ASSERT_EQ(vector[0].numaNodeId, 1);
+  ASSERT_EQ(vector[0].readPoolSize, 12);
+  ASSERT_EQ(vector[0].writePoolSize, 12);
+  ASSERT_EQ(vector[0].requiredSize, 15000000);
+
+  ASSERT_EQ(vector[1].initialPath, "/mnt/pmem1");
+  ASSERT_EQ(vector[1].numaNodeId, 2);
+  ASSERT_EQ(vector[1].readPoolSize, 12);
+  ASSERT_EQ(vector[1].writePoolSize, 12);
+  ASSERT_EQ(vector[1].requiredSize, 15000000);
 }
 
 TEST_F(TestPlasmaProperties, ParsePropertyFilePathTest) {
-  std::string propertyStr = "/tmp/persistent-memory.properties";
+  std::string currDir = get_current_dir_name();
+  int index = currDir.find("cpp");
+  currDir = currDir.substr(0,index+3);
+  std::string propertyStr =currDir + "/src/plasma/test/test-persistent-memory.properties";
   std::string argStr = "";
   PlasmaProperties* p = new PlasmaProperties(argStr, propertyStr);
   std::vector<plasma::numaNodeInfo> vector;
-  vector = p->getNumaNodeInfos();
+  vector = p->getNumaNodeInfos(); 
+  ASSERT_EQ(vector[0].initialPath, "/mnt/pmem0");
+  ASSERT_EQ(vector[0].numaNodeId, 1);
+  ASSERT_EQ(vector[0].readPoolSize, 12);
+  ASSERT_EQ(vector[0].writePoolSize, 12);
+  ASSERT_EQ(vector[0].requiredSize, 15000000);
 
+  ASSERT_EQ(vector[1].initialPath, "/mnt/pmem1");
+  ASSERT_EQ(vector[1].numaNodeId, 2);
+  ASSERT_EQ(vector[1].readPoolSize, 12);
+  ASSERT_EQ(vector[1].writePoolSize, 12);
+  ASSERT_EQ(vector[1].requiredSize, 15000000);
 }
 
 TEST_F(TestPlasmaProperties, ParsePropertyFilePathAndParseArgStrTest) {
-  std::string propertyStr = "/tmp/persistent-memory.properties";
+  std::string currDir = get_current_dir_name();
+  int index = currDir.find("cpp");
+  currDir = currDir.substr(0,index+3);
+  std::string propertyStr =currDir + "/src/plasma/test/test-persistent-memory.properties";
   std::string argStr =
       "totalNumaNodeNum:2,numaNodeId1:1,initialPath1:/mnt/"
-      "pmem0?numaNodeId2:2,initialPath2:/mnt/pmem1,requiredSize2:1500000";
+      "pmem0?numaNodeId2:2,initialPath2:/mnt/pmem1,requiredSize2:15000000";
   PlasmaProperties* p = new PlasmaProperties(argStr, propertyStr);
-  p->getNumaNodeInfos();
+  std::vector<plasma::numaNodeInfo> vector = p->getNumaNodeInfos();
+  ASSERT_EQ(vector[0].initialPath, "/mnt/pmem0");
+  ASSERT_EQ(vector[0].numaNodeId, 1);
+  ASSERT_EQ(vector[0].readPoolSize, 12);
+  ASSERT_EQ(vector[0].writePoolSize, 12);
+  ASSERT_EQ(vector[0].requiredSize, 15000000);
+
+  ASSERT_EQ(vector[1].initialPath, "/mnt/pmem1");
+  ASSERT_EQ(vector[1].numaNodeId, 2);
+  ASSERT_EQ(vector[1].readPoolSize, 12);
+  ASSERT_EQ(vector[1].writePoolSize, 12);
+  ASSERT_EQ(vector[1].requiredSize, 15000000);
 }
 
 }  // namespace plasma

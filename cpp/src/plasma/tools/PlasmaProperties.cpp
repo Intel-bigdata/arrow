@@ -25,12 +25,13 @@
 #include "arrow/util/logging.h"
 #include "stdio.h"
 #include "unistd.h"
+#include <iostream>
 
 namespace plasma {
 
-PlasmaProperties::PlasmaProperties(std::string& argStr, std::string& propertyFilePath_) {
-  this->argsStr = argStr;
-  this->propertyFilePath = propertyFilePath;
+PlasmaProperties::PlasmaProperties(std::string& argStr_, std::string& propertyFilePath_) {
+  this->argsStr = argStr_;
+  this->propertyFilePath = propertyFilePath_;
 }
 
 void PlasmaProperties::parseArgStr(std::string argStr) {
@@ -61,6 +62,8 @@ void PlasmaProperties::parsePropertyFilePath(std::string propertyFilePath) {
 std::vector<plasma::numaNodeInfo>& PlasmaProperties::getNumaNodeInfos() {
   parseArgStr(argsStr);
   parsePropertyFilePath(propertyFilePath);
+  std::cout<<"*****"<<propertyFilePath<<std::endl;
+  std::cout<<"************"<<propertyFileMap.size()<<std::endl;
   if (!buildNumaNodeInfos()) {
     ARROW_LOG(FATAL) << "InitialPath is not correct, please check.";
   }
