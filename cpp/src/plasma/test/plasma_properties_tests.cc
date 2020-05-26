@@ -63,12 +63,13 @@ TEST_F(TestPlasmaProperties, ParseArgStrTest) {
 TEST_F(TestPlasmaProperties, ParsePropertyFilePathTest) {
   std::string currDir = get_current_dir_name();
   int index = currDir.find("cpp");
-  currDir = currDir.substr(0,index+3);
-  std::string propertyStr =currDir + "/src/plasma/test/test-persistent-memory.properties";
+  currDir = currDir.substr(0, index + 3);
+  std::string propertyStr =
+      currDir + "/src/plasma/test/test-persistent-memory.properties";
   std::string argStr = "";
   PlasmaProperties* p = new PlasmaProperties(argStr, propertyStr);
   std::vector<plasma::numaNodeInfo> vector;
-  vector = p->getNumaNodeInfos(); 
+  vector = p->getNumaNodeInfos();
   ASSERT_EQ(vector[0].initialPath, "/mnt/pmem0");
   ASSERT_EQ(vector[0].numaNodeId, 1);
   ASSERT_EQ(vector[0].readPoolSize, 12);
@@ -85,8 +86,9 @@ TEST_F(TestPlasmaProperties, ParsePropertyFilePathTest) {
 TEST_F(TestPlasmaProperties, ParsePropertyFilePathAndParseArgStrTest) {
   std::string currDir = get_current_dir_name();
   int index = currDir.find("cpp");
-  currDir = currDir.substr(0,index+3);
-  std::string propertyStr =currDir + "/src/plasma/test/test-persistent-memory.properties";
+  currDir = currDir.substr(0, index + 3);
+  std::string propertyStr =
+      currDir + "/src/plasma/test/test-persistent-memory.properties";
   std::string argStr =
       "totalNumaNodeNum:2,numaNodeId1:1,initialPath1:/mnt/"
       "pmem0?numaNodeId2:2,initialPath2:/mnt/pmem1,requiredSize2:15000000";

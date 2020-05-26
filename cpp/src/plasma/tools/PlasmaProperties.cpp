@@ -18,14 +18,14 @@
 #include "plasma/tools/PlasmaProperties.h"
 #include <mntent.h>
 #include <sys/vfs.h>
+#include <boost/algorithm/string.hpp>
 #include <fstream>
+#include <iostream>
 #include <sstream>
 #include <string>
-#include <boost/algorithm/string.hpp>
 #include "arrow/util/logging.h"
 #include "stdio.h"
 #include "unistd.h"
-#include <iostream>
 
 namespace plasma {
 
@@ -62,8 +62,6 @@ void PlasmaProperties::parsePropertyFilePath(std::string propertyFilePath) {
 std::vector<plasma::numaNodeInfo>& PlasmaProperties::getNumaNodeInfos() {
   parseArgStr(argsStr);
   parsePropertyFilePath(propertyFilePath);
-  std::cout<<"*****"<<propertyFilePath<<std::endl;
-  std::cout<<"************"<<propertyFileMap.size()<<std::endl;
   if (!buildNumaNodeInfos()) {
     ARROW_LOG(FATAL) << "InitialPath is not correct, please check.";
   }
