@@ -44,7 +44,7 @@ bool VmemcacheStore::DetectInitialPath(std::vector<numaNodeInfo>& numaNodeInfos,
   int index = argStr.find("propertyFilePath");
   if (index != -1) {
     const int commaIndex = argStr.find_first_of(",");
-    const int propertyFilePathEndIndex = 17;
+    const int propertyFilePathEndIndex = std::strlen("propertyFilePath:");
     propertyFilePath = argStr.substr(propertyFilePathEndIndex, commaIndex);
     argStr = argStr.substr(commaIndex + 1, argStr.length());
   }
