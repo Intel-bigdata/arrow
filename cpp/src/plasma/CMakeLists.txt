@@ -70,6 +70,12 @@ if(ARROW_CUDA)
   add_definitions(-DPLASMA_CUDA)
 endif()
 
+if(ARROW_PLASMA_MEMKIND)
+  set(PLASMA_LINK_LIBS ${PLASMA_LINK_LIBS} memkind)
+  set(PLASMA_STATIC_LINK_LIBS memkind ${PLASMA_STATIC_LINK_LIBS})
+  add_definitions(-DPLASMA_MEMKIND)
+endif()
+
 if(NOT APPLE AND NOT MSVC)
   # Localize thirdparty symbols using a linker version script. This hides them
   # from the client application. The OS X linker does not support the

@@ -33,17 +33,28 @@
 #include "plasma/common.h"
 #include "plasma/plasma.h"
 
+#ifdef PLASMA_MEMKIND
+#include <memkind.h>
+#endif
+
 namespace plasma {
 
 std::unordered_map<void*, MmapRecord> mmap_records;
 
+#ifndef PLASMA_MEMKIND
 static void* pointer_advance(void* p, ptrdiff_t n) { return (unsigned char*)p + n; }
 
 static ptrdiff_t pointer_distance(void const* pfrom, void const* pto) {
   return (unsigned char const*)pto - (unsigned char const*)pfrom;
 }
+#endif
 
 void GetMallocMapinfo(void* addr, int* fd, int64_t* map_size, ptrdiff_t* offset) {
+#ifdef PLASMA_MEMKIND
+  memkind_pmem_get_mmap_record(addr, fd,
+                               reinterpret_cast<off_t *>(offset),
+                               reinterpret_cast<size_t *>(map_size));
+#else
   // TODO(rshin): Implement a more efficient search through mmap_records.
   for (const auto& entry : mmap_records) {
     if (addr >= entry.first && addr < pointer_advance(entry.first, entry.second.size)) {
@@ -56,9 +67,13 @@ void GetMallocMapinfo(void* addr, int* fd, int64_t* map_size, ptrdiff_t* offset)
   *fd = -1;
   *map_size = 0;
   *offset = 0;
+#endif
 }
 
 int64_t GetMmapSize(int fd) {
+#ifdef PLASMA_MEMKIND
+  return memkind_pmem_get_mmap_size(fd);
+#else
   for (const auto& entry : mmap_records) {
     if (entry.second.fd == fd) {
       return entry.second.size;
@@ -66,6 +81,7 @@ int64_t GetMmapSize(int fd) {
   }
   ARROW_LOG(FATAL) << "failed to find entry in mmap_records for fd " << fd;
   return -1;  // This code is never reached.
+#endif
 }
 
 }  // namespace plasma

@@ -27,6 +27,10 @@ void* dlmemalign(size_t alignment, size_t bytes);
 void dlfree(void* mem);
 }
 
+#ifdef PLASMA_MEMKIND
+struct memkind* PlasmaAllocator::pmem_kind_ = nullptr;
+#endif
+
 int64_t PlasmaAllocator::footprint_limit_ = 0;
 int64_t PlasmaAllocator::allocated_ = 0;
 std::mutex PlasmaAllocator::mtx;
@@ -37,7 +41,11 @@ void* PlasmaAllocator::Memalign(size_t alignment, size_t bytes) {
     if (allocated_ + static_cast<int64_t>(bytes) > footprint_limit_) {
       return nullptr;
     }
+#ifdef PLASMA_MEMKIND
+    memkind_posix_memalign(pmem_kind_, (void **)&mem, alignment, bytes);
+#else
     mem = dlmemalign(alignment, bytes);
+#endif
     allocated_ += bytes;
   }
   ARROW_CHECK(mem);
@@ -46,7 +54,11 @@ void* PlasmaAllocator::Memalign(size_t alignment, size_t bytes) {
 
 void PlasmaAllocator::Free(void* mem, size_t bytes) {
   std::lock_guard<std::mutex> lck(PlasmaAllocator::mtx);
+#ifdef PLASMA_MEMKIND
+   memkind_free(pmem_kind_, mem);
+#else
   dlfree(mem);
+#endif
   allocated_ -= bytes;
 }
 
@@ -57,5 +69,32 @@ void PlasmaAllocator::SetFootprintLimit(size_t bytes) {
 int64_t PlasmaAllocator::GetFootprintLimit() { return footprint_limit_; }
 
 int64_t PlasmaAllocator::Allocated() { return allocated_; }
+
+#ifdef PLASMA_MEMKIND
+static void print_err_message(int err)
+{
+  char error_message[MEMKIND_ERROR_MESSAGE_SIZE];
+  memkind_error_message(err, error_message, MEMKIND_ERROR_MESSAGE_SIZE);
+  ARROW_LOG(INFO) << error_message;
+}
+
+int PlasmaAllocator::CreateMemkind(std::string &path) {
+  ARROW_LOG(INFO) << "Creat pmem at " << path
+                  << " size "
+                  <<  footprint_limit_;
+  int result = memkind_create_pmem(path.c_str(), footprint_limit_, &pmem_kind_);
+  if (result) {
+    print_err_message(result);
+  }
+  ARROW_CHECK(result == 0) << "Failed to create pmem";
+  return result;
+}
+
+int PlasmaAllocator::DestroyMemkind() {
+  int result = memkind_destroy_kind(pmem_kind_);
+  ARROW_CHECK(result == 0) << "Failed to destroy pmem";
+  return result;
+}
+#endif
 
 }  // namespace plasma
