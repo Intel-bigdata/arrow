@@ -47,13 +47,14 @@ set(PLASMA_IO_SRCS
 set(PLASMA_SRCS
     client.cc
     common.cc
-    malloc.cc
+    #malloc.cc
     plasma.cc
     protocol.cc
     tools/PlasmaProperties.cpp
     ${PLASMA_IO_SRCS})
 
 set(PLASMA_STORE_SRCS
+    malloc.cc
     dlmalloc.cc
     eviction_policy.cc
     quota_aware_policy.cc

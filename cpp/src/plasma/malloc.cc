@@ -32,6 +32,7 @@
 #include "arrow/util/logging.h"
 #include "plasma/common.h"
 #include "plasma/plasma.h"
+#include "plasma/plasma_allocator.h"
 
 #ifdef PLASMA_MEMKIND
 #include <memkind.h>
@@ -72,7 +73,8 @@ void GetMallocMapinfo(void* addr, int* fd, int64_t* map_size, ptrdiff_t* offset)
 
 int64_t GetMmapSize(int fd) {
 #ifdef PLASMA_MEMKIND
-  return memkind_pmem_get_mmap_size(fd);
+  //return memkind_pmem_get_mmap_size(fd);
+  return PlasmaAllocator::GetFootprintLimit();  
 #else
   for (const auto& entry : mmap_records) {
     if (entry.second.fd == fd) {
