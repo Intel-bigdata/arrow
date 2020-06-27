@@ -62,6 +62,8 @@ class PlasmaAllocator {
 #ifdef PLASMA_MEMKIND
   static int CreateMemkind(std::string &path);
   static int DestroyMemkind();
+  static void GetMemkindMapinfo(void* addr, int* fd, int64_t* map_size, ptrdiff_t* offset);
+  static int64_t GetMemkindMmapSize(int fd);
 #endif
 
   static std::mutex mtx;

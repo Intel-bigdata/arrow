@@ -95,6 +95,17 @@ int PlasmaAllocator::DestroyMemkind() {
   ARROW_CHECK(result == 0) << "Failed to destroy pmem";
   return result;
 }
+
+void PlasmaAllocator::GetMemkindMapinfo(void* addr, int* fd,
+                                        int64_t* map_size, ptrdiff_t* offset) {
+  memkind_pmem_get_mmap_record(pmem_kind_, addr, fd,
+                               reinterpret_cast<off_t *>(offset),
+                               reinterpret_cast<size_t *>(map_size));
+}
+
+int64_t PlasmaAllocator::GetMemkindMmapSize(int fd) {
+  return memkind_pmem_get_mmap_size(pmem_kind_, fd);
+}
 #endif
 
 }  // namespace plasma

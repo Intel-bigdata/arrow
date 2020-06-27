@@ -52,9 +52,7 @@ static ptrdiff_t pointer_distance(void const* pfrom, void const* pto) {
 
 void GetMallocMapinfo(void* addr, int* fd, int64_t* map_size, ptrdiff_t* offset) {
 #ifdef PLASMA_MEMKIND
-  memkind_pmem_get_mmap_record(addr, fd,
-                               reinterpret_cast<off_t *>(offset),
-                               reinterpret_cast<size_t *>(map_size));
+  PlasmaAllocator::GetMemkindMapinfo(addr, fd, map_size, offset);
 #else
   // TODO(rshin): Implement a more efficient search through mmap_records.
   for (const auto& entry : mmap_records) {
@@ -73,8 +71,7 @@ void GetMallocMapinfo(void* addr, int* fd, int64_t* map_size, ptrdiff_t* offset)
 
 int64_t GetMmapSize(int fd) {
 #ifdef PLASMA_MEMKIND
-  //return memkind_pmem_get_mmap_size(fd);
-  return PlasmaAllocator::GetFootprintLimit();  
+  return PlasmaAllocator::GetMemkindMmapSize(fd);  
 #else
   for (const auto& entry : mmap_records) {
     if (entry.second.fd == fd) {
