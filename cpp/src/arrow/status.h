@@ -92,7 +92,8 @@ enum class StatusCode : char {
   ExpressionValidationError = 41,
   ExecutionError = 42,
   // Continue generic codes.
-  AlreadyExists = 45
+  AlreadyExists = 45,
+  HitCountNotReachedLRUK = 46
 };
 
 /// \brief An opaque class that allows subsystems to retain

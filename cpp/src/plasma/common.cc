@@ -47,6 +47,9 @@ class PlasmaStatusDetail : public arrow::StatusDetail {
       case PlasmaErrorCode::PlasmaObjectAlreadySealed:
         type = "Plasma object is already sealed";
         break;
+      case PlasmaErrorCode::HitCountNotReachedLRUK:
+        type = "object Hit count not reached LRU_k";
+        break;
       default:
         type = "Unknown plasma error";
         break;
@@ -75,6 +78,9 @@ using arrow::Status;
 arrow::Status MakePlasmaError(PlasmaErrorCode code, std::string message) {
   arrow::StatusCode arrow_code = arrow::StatusCode::UnknownError;
   switch (code) {
+    case PlasmaErrorCode::HitCountNotReachedLRUK:
+      arrow_code = arrow::StatusCode::HitCountNotReachedLRUK;
+      break;
     case PlasmaErrorCode::PlasmaObjectExists:
       arrow_code = arrow::StatusCode::AlreadyExists;
       break;
@@ -104,6 +110,9 @@ bool IsPlasmaObjectAlreadySealed(const arrow::Status& status) {
 }
 bool IsPlasmaStoreFull(const arrow::Status& status) {
   return IsPlasmaStatus(status, PlasmaErrorCode::PlasmaStoreFull);
+}
+bool IsNotReachedLRUK(const arrow::Status& status) {
+  return IsPlasmaStatus(status, PlasmaErrorCode::HitCountNotReachedLRUK);
 }
 
 UniqueID UniqueID::from_binary(const std::string& binary) {

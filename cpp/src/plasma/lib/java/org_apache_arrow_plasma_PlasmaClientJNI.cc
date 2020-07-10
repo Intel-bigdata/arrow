@@ -124,6 +124,12 @@ JNIEXPORT jobject JNICALL Java_org_apache_arrow_plasma_PlasmaClientJNI_create(
     env->ThrowNew(exceptionClass, "");
     return nullptr;
   }
+  if (plasma::IsNotReachedLRUK(s)) {
+    jclass exceptionClass =
+        env->FindClass("org/apache/arrow/plasma/exceptions/ObjectHitCountNotReachedKException");
+    env->ThrowNew(exceptionClass, "");
+    return nullptr;
+  }
   throw_exception_if_not_OK(env, s);
 
   return env->NewDirectByteBuffer(data->mutable_data(), size);

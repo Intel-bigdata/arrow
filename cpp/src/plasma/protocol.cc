@@ -90,6 +90,9 @@ Status PlasmaErrorStatus(fb::PlasmaError plasma_error) {
     case fb::PlasmaError::OutOfMemory:
       return MakePlasmaError(PlasmaErrorCode::PlasmaStoreFull,
                              "object does not fit in the plasma store");
+    case fb::PlasmaError::HitCountNotReachedLRUK:
+      return MakePlasmaError(PlasmaErrorCode::HitCountNotReachedLRUK,
+                              "this object hit count not reached LRU_K");
     default:
       ARROW_LOG(FATAL) << "unknown plasma error code " << static_cast<int>(plasma_error);
   }

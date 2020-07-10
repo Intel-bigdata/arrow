@@ -303,30 +303,33 @@ enum class PlasmaError : int32_t {
   OutOfMemory = 3,
   ObjectNotSealed = 4,
   ObjectInUse = 5,
+  HitCountNotReachedLRUK = 6,
   MIN = OK,
   MAX = ObjectInUse
 };
 
-inline const PlasmaError (&EnumValuesPlasmaError())[6] {
+inline const PlasmaError (&EnumValuesPlasmaError())[7] {
   static const PlasmaError values[] = {
     PlasmaError::OK,
     PlasmaError::ObjectExists,
     PlasmaError::ObjectNotFound,
     PlasmaError::OutOfMemory,
     PlasmaError::ObjectNotSealed,
-    PlasmaError::ObjectInUse
+    PlasmaError::ObjectInUse,
+    PlasmaError::HitCountNotReachedLRUK
   };
   return values;
 }
 
 inline const char * const *EnumNamesPlasmaError() {
-  static const char * const names[7] = {
+  static const char * const names[8] = {
     "OK",
     "ObjectExists",
     "ObjectNotFound",
     "OutOfMemory",
     "ObjectNotSealed",
     "ObjectInUse",
+    "HitCountNotReachedLRUK",
     nullptr
   };
   return names;

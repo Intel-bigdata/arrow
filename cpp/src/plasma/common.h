@@ -47,6 +47,7 @@ enum class PlasmaErrorCode : int8_t {
   PlasmaObjectNotFound = 2,
   PlasmaStoreFull = 3,
   PlasmaObjectAlreadySealed = 4,
+  HitCountNotReachedLRUK = 5,
 };
 
 ARROW_EXPORT arrow::Status MakePlasmaError(PlasmaErrorCode code, std::string message);
@@ -58,6 +59,8 @@ ARROW_EXPORT bool IsPlasmaObjectNotFound(const arrow::Status& status);
 ARROW_EXPORT bool IsPlasmaObjectAlreadySealed(const arrow::Status& status);
 /// Return true iff the status indicates the Plasma store reached its capacity limit.
 ARROW_EXPORT bool IsPlasmaStoreFull(const arrow::Status& status);
+/// Return true if object hit count > LRU_K
+ARROW_EXPORT bool IsNotReachedLRUK(const arrow::Status& status);
 
 constexpr int64_t kUniqueIDSize = 20;
 

@@ -259,8 +259,16 @@ PlasmaError PlasmaStore::CreateObject(const ObjectID& object_id, bool evict_if_f
                                       int device_num,
                                       const std::shared_ptr<ClientConnection>& client,
                                       PlasmaObject* result) {
-  ARROW_LOG(DEBUG) << "creating object " << object_id.hex();
+  std::string objectHexString = object_id.hex();
+  if (objectHitCount.find(objectHexString) == objectHitCount.end()) objectHitCount.insert(make_pair(objectHexString, 0));
+  auto objHitCnt = objectHitCount.find(object_id.hex());
+  objHitCnt->second+=1;
+  if(objectHitCount.find(objectHexString)->second < LRU_K) {
+    ARROW_LOG(DEBUG) << "object: " << objectHexString << " hit count not reached LRU-K = " << LRU_K;
+    return PlasmaError::HitCountNotReachedLRUK;
+  }
 
+  ARROW_LOG(DEBUG) << "creating object " << objectHexString;
   auto entry = GetObjectTableEntry(&store_info_, object_id);
   if (entry != nullptr) {
     // There is already an object with the same ID in the Plasma Store, so

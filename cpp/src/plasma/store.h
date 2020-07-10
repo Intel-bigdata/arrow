@@ -167,6 +167,12 @@ class PlasmaStore {
   void OnKill();
 
  private:
+  // LRU-K
+  int LRU_K = 2;
+
+  //record every object's access count, if larger than k, move it to cache
+  std::unordered_map <std::string, int> objectHitCount;
+
   // Update memory store and external store metrics
   void UpdateMetrics(PlasmaMetrics* metrics);
 

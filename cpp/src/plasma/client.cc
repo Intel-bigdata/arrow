@@ -416,6 +416,8 @@ Status PlasmaClient::Impl::Create(const ObjectID& object_id, int64_t data_size,
                                   bool evict_if_full) {
   std::lock_guard<std::recursive_mutex> guard(client_mutex_);
 
+  ARROW_LOG(DEBUG) << "+++++++++++++++++++";
+
   ARROW_LOG(DEBUG) << "called plasma_create on conn " << store_conn_ << " with size "
                    << data_size << " and metadata size " << metadata_size;
   RETURN_NOT_OK(SendCreateRequest(store_conn_, object_id, evict_if_full, data_size,

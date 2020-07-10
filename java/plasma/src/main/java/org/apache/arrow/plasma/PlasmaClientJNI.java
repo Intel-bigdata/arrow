@@ -20,6 +20,7 @@ package org.apache.arrow.plasma;
 import java.nio.ByteBuffer;
 
 import org.apache.arrow.plasma.exceptions.DuplicateObjectException;
+import org.apache.arrow.plasma.exceptions.ObjectHitCountNotReachedKException;
 import org.apache.arrow.plasma.exceptions.PlasmaOutOfMemoryException;
 
 /**
@@ -32,7 +33,7 @@ public class PlasmaClientJNI {
   public static native void disconnect(long conn);
 
   public static native ByteBuffer create(long conn, byte[] objectId, int size, byte[] metadata)
-          throws DuplicateObjectException, PlasmaOutOfMemoryException;
+          throws DuplicateObjectException, PlasmaOutOfMemoryException, ObjectHitCountNotReachedKException;
 
   public static native byte[] hash(long conn, byte[] objectId);
 
