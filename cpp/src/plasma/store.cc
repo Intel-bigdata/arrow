@@ -261,12 +261,15 @@ PlasmaError PlasmaStore::CreateObject(const ObjectID& object_id, bool evict_if_f
                                       const std::shared_ptr<ClientConnection>& client,
                                       PlasmaObject* result) {
   std::string objectHexString = object_id.hex();
-  if (objectHitCount.find(objectHexString) == objectHitCount.end()) objectHitCount.insert(make_pair(objectHexString, 0));
-  auto objHitCnt = objectHitCount.find(object_id.hex());
-  objHitCnt->second+=1;
-  if(objectHitCount.find(objectHexString)->second < LRU_K) {
-    ARROW_LOG(DEBUG) << "object: " << objectHexString << " hit count not reached LRU-K = " << LRU_K;
-    return PlasmaError::HitCountNotReachedLRUK;
+
+  if(LRU_K > 1) {
+    if (objectHitCount.find(objectHexString) == objectHitCount.end()) objectHitCount.insert(make_pair(objectHexString, 0));
+    auto objHitCnt = objectHitCount.find(object_id.hex());
+    objHitCnt->second+=1;
+    if(objectHitCount.find(objectHexString)->second < LRU_K) {
+      ARROW_LOG(DEBUG) << "object: " << objectHexString << " hit count not reached LRU-K = " << LRU_K;
+      return PlasmaError::HitCountNotReachedLRUK;
+    }
   }
 
   ARROW_LOG(DEBUG) << "creating object " << objectHexString;
