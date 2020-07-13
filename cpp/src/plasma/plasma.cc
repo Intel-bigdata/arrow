@@ -89,11 +89,13 @@ ObjectTableEntry* GetObjectTableEntry(PlasmaStoreInfo* store_info,
   auto it = store_info->objects.find(object_id);
   if (it == store_info->objects.end()) {
     plasma::miss += 1;
+    ARROW_LOG(DEBUG) << "hit: = " << plasma::hit;
     ARROW_LOG(DEBUG) << "miss: = " << plasma::miss;
     return NULL;
   }
   plasma::hit += 1;
   ARROW_LOG(DEBUG) << "hit: = " << plasma::hit;
+  ARROW_LOG(DEBUG) << "miss: = " << plasma::miss;
   return it->second.get();
 }
 
