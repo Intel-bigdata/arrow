@@ -87,15 +87,18 @@ ObjectTableEntry* GetObjectTableEntry(PlasmaStoreInfo* store_info,
                                       const ObjectID& object_id) {
   std::lock_guard<std::mutex> lock_guard(entry_mtx);
   auto it = store_info->objects.find(object_id);
+  plasma::total += 1;
   if (it == store_info->objects.end()) {
     plasma::miss += 1;
     ARROW_LOG(DEBUG) << "hit: = " << plasma::hit;
     ARROW_LOG(DEBUG) << "miss: = " << plasma::miss;
+    ARROW_LOG(DEBUG) << "total: = " << plasma::total;
     return NULL;
   }
   plasma::hit += 1;
   ARROW_LOG(DEBUG) << "hit: = " << plasma::hit;
   ARROW_LOG(DEBUG) << "miss: = " << plasma::miss;
+  ARROW_LOG(DEBUG) << "total: = " << plasma::total;
   return it->second.get();
 }
 

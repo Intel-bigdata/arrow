@@ -43,6 +43,8 @@ static long hit = 0;
 
 static long miss = 0;
 
+static long total = 0;
+
 // TODO(pcm): Replace this by the flatbuffers message PlasmaObjectSpec.
 struct PlasmaObject {
 #ifdef PLASMA_CUDA
