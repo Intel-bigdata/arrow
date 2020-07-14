@@ -578,8 +578,19 @@ ObjectStatus PlasmaStore::ContainsObject(
     const ObjectID& object_id, const std::shared_ptr<ClientConnection>& client) {
   auto entry = GetObjectTableEntry(&store_info_, object_id);
   ObjectStatus status = ObjectStatus::OBJECT_NOT_FOUND;
+  plasma::total += 1;
+  if (!entry) {
+    plasma::miss += 1;
+    ARROW_LOG(DEBUG) << "total: " << total;
+    ARROW_LOG(DEBUG) << "miss: " << miss;
+    ARROW_LOG(DEBUG) << "hit: " << hit;
+    return status;
+  }
+  plasma::hit += 1;
+  ARROW_LOG(DEBUG) << "total: " << total;
+  ARROW_LOG(DEBUG) << "miss: " << miss;
+  ARROW_LOG(DEBUG) << "hit: " << hit;
 
-  if (!entry) return status;
 
   {
     entry->mtx.lock();

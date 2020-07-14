@@ -48,6 +48,9 @@ class ARROW_EXPORT PlasmaClient {
  public:
   PlasmaClient();
   ~PlasmaClient();
+ static long total;
+ static long hit;
+ static long miss; 
 
   /// Connect to the local plasma store. Return the resulting connection.
   ///

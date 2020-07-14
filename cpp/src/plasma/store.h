@@ -38,6 +38,10 @@ class Status;
 
 namespace plasma {
 
+static long total = 0;
+static long hit = 0;
+static long miss = 0;
+
 namespace flatbuf {
 enum class PlasmaError;
 }  // namespace flatbuf
