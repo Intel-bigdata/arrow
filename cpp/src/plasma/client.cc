@@ -519,9 +519,6 @@ Status PlasmaClient::Impl::GetBuffers(
         const ObjectID&, const std::shared_ptr<Buffer>&)>& wrap_buffer,
     ObjectBuffer* object_buffers) {
   // Fill out the info for the objects that are already in use locally.
-
-  // plasma::total += 1;
-  // ARROW_LOG(DEBUG) << "getbuffers" << total;
   bool all_present = true;
   for (int64_t i = 0; i < num_objects; ++i) {
     auto object_entry = objects_in_use_.find(object_ids[i]);
@@ -658,7 +655,6 @@ Status PlasmaClient::Impl::GetBuffers(
 
 Status PlasmaClient::Impl::Get(const std::vector<ObjectID>& object_ids,
                                int64_t timeout_ms, std::vector<ObjectBuffer>* out) {
-  ARROW_LOG(DEBUG) << "3333333333get  3 parameters called";
   std::lock_guard<std::recursive_mutex> guard(client_mutex_);
 
   const auto wrap_buffer = [=](const ObjectID& object_id,
@@ -672,7 +668,6 @@ Status PlasmaClient::Impl::Get(const std::vector<ObjectID>& object_ids,
 
 Status PlasmaClient::Impl::Get(const ObjectID* object_ids, int64_t num_objects,
                                int64_t timeout_ms, ObjectBuffer* out) {
-  ARROW_LOG(DEBUG) << "4444444444get 4 parameters called";
   std::lock_guard<std::recursive_mutex> guard(client_mutex_);
 
   const auto wrap_buffer = [](const ObjectID& object_id,

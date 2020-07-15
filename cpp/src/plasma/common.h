@@ -40,7 +40,6 @@
 
 namespace plasma {
 
-
 enum class ObjectLocation : int32_t { Local, Remote, NotFound };
 
 enum class PlasmaErrorCode : int8_t {
