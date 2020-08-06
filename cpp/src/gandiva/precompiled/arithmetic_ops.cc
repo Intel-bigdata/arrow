@@ -286,6 +286,28 @@ DIV_FLOAT(float64)
 
 #undef DIV_FLOAT
 
+#define SHIFT_LEFT_INT(LTYPE, RTYPE)                                               \
+  FORCE_INLINE                                                                      \
+  gdv_##LTYPE shift_left_##LTYPE##_##RTYPE(gdv_##LTYPE in1, gdv_##RTYPE in2) {     \
+    return static_cast<gdv_##LTYPE>(in1 << in2);                                    \
+  }
+
+SHIFT_LEFT_INT(int32, int32)
+SHIFT_LEFT_INT(int64, int32)
+
+#undef SHIFT_RIGHT_INT
+
+#define SHIFT_RIGHT_INT(LTYPE, RTYPE)                                               \
+  FORCE_INLINE                                                                      \
+  gdv_##LTYPE shift_right_##LTYPE##_##RTYPE(gdv_##LTYPE in1, gdv_##RTYPE in2) {     \
+    return static_cast<gdv_##LTYPE>(in1 >> in2);                                    \
+  }
+
+SHIFT_RIGHT_INT(int32, int32)
+SHIFT_RIGHT_INT(int64, int32)
+
+#undef SHIFT_RIGHT_INT
+
 #undef DATE_FUNCTION
 #undef DATE_TYPES
 #undef NUMERIC_BOOL_DATE_TYPES

@@ -208,6 +208,93 @@ TEST_F(TestProjector, TestProjectCacheDecimalCast) {
   EXPECT_EQ(projector0.get(), projector2.get());
 }
 
+TEST_F(TestProjector, TestShiftRight) {
+  // schema for input fields
+  auto field0 = field("f0", int32());
+  auto field1 = field("f1", int32());
+  auto schema = arrow::schema({field0, field1});
+
+  // output fields
+  auto field_shift_right = field("shift_right", int32());
+
+  // Build expression
+  auto shift_right_expr = TreeExprBuilder::MakeExpression("shift_right", {field0, field1},
+      field_shift_right);
+
+  std::shared_ptr<Projector> projector;
+
+  auto status =
+      Projector::Make(schema, {shift_right_expr}, TestConfiguration(), &projector);
+  EXPECT_TRUE(status.ok());
+
+  if (!status.ok()) {
+    std::cout << status.message() << std::endl;
+  }
+
+  // Create a row-batch with some sample data
+  int num_records = 4;
+  auto array0 = MakeArrowArrayInt32({4, 8, 16, 32}, {true, true, true, true});
+  auto array1 = MakeArrowArrayInt32({1, 2, 3, 4}, {true, true, true, true});
+
+  // expected output
+  auto exp_shift_right = MakeArrowArrayInt32({2, 2, 2, 2}, {true, true, true, true});
+
+  // prepare input record batch
+  auto in_batch = arrow::RecordBatch::Make(schema, num_records, {array0, array1});
+
+  // Evaluate expression
+  arrow::ArrayVector outputs;
+  status = projector->Evaluate(*in_batch, pool_, &outputs);
+  EXPECT_TRUE(status.ok());
+
+  // Validate results
+  EXPECT_ARROW_ARRAY_EQUALS(exp_shift_right, outputs.at(0));
+}
+
+
+TEST_F(TestProjector, TestShiftLeft) {
+  // schema for input fields
+  auto field0 = field("f0", int32());
+  auto field1 = field("f1", int32());
+  auto schema = arrow::schema({field0, field1});
+
+  // output fields
+  auto field_shift_left = field("shift_left", int32());
+
+  // Build expression
+  auto shift_left_expr = TreeExprBuilder::MakeExpression("shift_left", {field0, field1},
+                                                          field_shift_left);
+
+  std::shared_ptr<Projector> projector;
+
+  auto status =
+      Projector::Make(schema, {shift_left_expr}, TestConfiguration(), &projector);
+  EXPECT_TRUE(status.ok());
+
+  if (!status.ok()) {
+    std::cout << status.message() << std::endl;
+  }
+
+  // Create a row-batch with some sample data
+  int num_records = 4;
+  auto array0 = MakeArrowArrayInt32({4, 8, 16, 32}, {true, true, true, true});
+  auto array1 = MakeArrowArrayInt32({4, 3, 2, 1}, {true, true, true, true});
+
+  // expected output
+  auto exp_shift_left = MakeArrowArrayInt32({64, 64, 64, 64}, {true, true, true, true});
+
+  // prepare input record batch
+  auto in_batch = arrow::RecordBatch::Make(schema, num_records, {array0, array1});
+
+  // Evaluate expression
+  arrow::ArrayVector outputs;
+  status = projector->Evaluate(*in_batch, pool_, &outputs);
+  EXPECT_TRUE(status.ok());
+
+  // Validate results
+  EXPECT_ARROW_ARRAY_EQUALS(exp_shift_left, outputs.at(0));
+}
+
 TEST_F(TestProjector, TestIntSumSub) {
   // schema for input fields
   auto field0 = field("f0", int32());
