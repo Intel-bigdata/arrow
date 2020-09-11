@@ -56,7 +56,7 @@ class TestPlasmaStore : public ::testing::Test {
     std::string plasma_directory =
         test_executable.substr(0, test_executable.find_last_of("/"));
     std::string plasma_command =
-        plasma_directory + "/plasma-store-server -m 10000000 -s " + store_socket_name_ +
+        plasma_directory + "/plasma-store-server -m 100000000 -s " + store_socket_name_ +
         // " 1> /tmp/log.stdout 2> /tmp/log.stderr" +
         " & " + "echo $! > " + store_socket_name_ + ".pid";
     PLASMA_CHECK_SYSTEM(system(plasma_command.c_str()));
@@ -106,7 +106,7 @@ class TestPlasmaStore : public ::testing::Test {
 TEST_F(TestPlasmaStore, MetricsTest) {
   PlasmaMetrics metrics;
   auto status = client_.Metrics(&metrics);
-  ASSERT_EQ(10000000, metrics.share_mem_total);
+  ASSERT_EQ(100000000, metrics.share_mem_total);
   ASSERT_TRUE(metrics.share_mem_used == 0);
   ASSERT_EQ(0, metrics.external_total);
   ASSERT_EQ(0, metrics.external_used);

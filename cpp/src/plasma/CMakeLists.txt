@@ -47,13 +47,14 @@ set(PLASMA_IO_SRCS
 set(PLASMA_SRCS
     client.cc
     common.cc
-    malloc.cc
+    #malloc.cc
     plasma.cc
     protocol.cc
     tools/PlasmaProperties.cpp
     ${PLASMA_IO_SRCS})
 
 set(PLASMA_STORE_SRCS
+    malloc.cc
     dlmalloc.cc
     eviction_policy.cc
     quota_aware_policy.cc
@@ -68,6 +69,12 @@ if(ARROW_CUDA)
   set(PLASMA_LINK_LIBS ${PLASMA_LINK_LIBS} arrow_cuda_shared)
   set(PLASMA_STATIC_LINK_LIBS arrow_cuda_static ${PLASMA_STATIC_LINK_LIBS})
   add_definitions(-DPLASMA_CUDA)
+endif()
+
+if(ARROW_PLASMA_MEMKIND)
+  set(PLASMA_LINK_LIBS ${PLASMA_LINK_LIBS} memkind)
+  set(PLASMA_STATIC_LINK_LIBS memkind ${PLASMA_STATIC_LINK_LIBS})
+  add_definitions(-DPLASMA_MEMKIND)
 endif()
 
 if(NOT APPLE AND NOT MSVC)

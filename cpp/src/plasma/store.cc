@@ -1073,6 +1073,7 @@ class PlasmaStoreRunner {
     store_.reset(new PlasmaStore(io_context_, directory, hugepages_enabled, stream_name,
                                  external_store));
     plasma_config = store_->GetPlasmaStoreInfo();
+#ifndef PLASMA_MEMKIND
     // We are using a single memory-mapped file by mallocing and freeing a single
     // large amount of space up front. According to the documentation,
     // dlmalloc might need up to 128*sizeof(size_t) bytes for internal
@@ -1085,6 +1086,9 @@ class PlasmaStoreRunner {
 
     plasma::PlasmaAllocator::Free(
         pointer, PlasmaAllocator::GetFootprintLimit() - 256 * sizeof(size_t));
+#else
+    plasma::PlasmaAllocator::CreateMemkind(directory);
+#endif
 
     std::vector<std::thread> threads(thread_num - 1);
     ARROW_LOG(DEBUG) << "will start " << thread_num << " threads for server";
@@ -1094,7 +1098,12 @@ class PlasmaStoreRunner {
     io_context_.run();
   }
 
-  void Stop() { io_context_.stop(); }
+  void Stop() {
+    io_context_.stop();
+#ifdef PLASMA_MEMKIND
+    plasma::PlasmaAllocator::DestroyMemkind();
+#endif
+  }
 
   void Shutdown() {
     io_context_.stop();

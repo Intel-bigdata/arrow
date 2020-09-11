@@ -232,6 +232,8 @@ if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 
   define_option(ARROW_PLASMA_JAVA_CLIENT "Build the plasma object store java client" OFF)
 
+  define_option(ARROW_PLASMA_MEMKIND "Build the plasma object store with memkind" OFF)
+
   define_option(ARROW_PYTHON "Build the Arrow CPython extensions" OFF)
 
   define_option(ARROW_S3 "Build Arrow with S3 support (requires the AWS SDK for C++)" OFF)

@@ -22,6 +22,10 @@
 
 #include <mutex>
 
+#ifdef PLASMA_MEMKIND
+#include <memkind.h>
+#endif
+
 namespace plasma {
 
 class PlasmaAllocator {
@@ -55,11 +59,21 @@ class PlasmaAllocator {
   /// \return Number of bytes allocated by Plasma so far.
   static int64_t Allocated();
 
+#ifdef PLASMA_MEMKIND
+  static int CreateMemkind(std::string &path);
+  static int DestroyMemkind();
+  static void GetMemkindMapinfo(void* addr, int* fd, int64_t* map_size, ptrdiff_t* offset);
+  static int64_t GetMemkindMmapSize(int fd);
+#endif
+
   static std::mutex mtx;
 
  private:
   static int64_t allocated_;
   static int64_t footprint_limit_;
+#ifdef PLASMA_MEMKIND
+  static struct memkind *pmem_kind_;
+#endif
 };
 
 }  // namespace plasma
