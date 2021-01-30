@@ -539,7 +539,6 @@ int64_t ProxyMemoryPool::max_memory() const { return impl_->max_memory(); }
 
 std::string ProxyMemoryPool::backend_name() const { return impl_->backend_name(); }
 
-
 ReservationListener::~ReservationListener() {}
 
 ReservationListener::ReservationListener() {}
@@ -596,7 +595,7 @@ class ReservationListenableMemoryPool::ReservationListenableMemoryPoolImpl {
   }
 
   Status UpdateReservation(int64_t diff) {
-    int64_t granted = Reserve(diff);
+    /*int64_t granted = Reserve(diff);
     if (granted == 0) {
       return Status::OK();
     }
@@ -604,7 +603,7 @@ class ReservationListenableMemoryPool::ReservationListenableMemoryPoolImpl {
       RETURN_NOT_OK(listener_->OnRelease(-granted));
       return Status::OK();
     }
-    RETURN_NOT_OK(listener_->OnReservation(granted));
+    RETURN_NOT_OK(listener_->OnReservation(granted));*/
     return Status::OK();
   }
 
@@ -677,6 +676,5 @@ std::string ReservationListenableMemoryPool::backend_name() const {
 std::shared_ptr<ReservationListener> ReservationListenableMemoryPool::get_listener() {
   return impl_->get_listener();
 }
-
 
 }  // namespace arrow
