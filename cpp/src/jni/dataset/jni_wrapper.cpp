@@ -209,7 +209,8 @@ std::shared_ptr<arrow::fs::FileSystem> GetFileSystem(JNIEnv* env, jint id,
     case 0:
       *out_path = path;
       return std::make_shared<arrow::fs::LocalFileSystem>();
-    case 1: {
+    case 1:
+    case 2: {
       JNI_ASSIGN_OR_THROW(std::shared_ptr<arrow::fs::FileSystem> ret,
                           arrow::fs::FileSystemFromUri(path, out_path))
       return ret;
@@ -422,6 +423,9 @@ JNIEXPORT jbyteArray JNICALL Java_org_apache_arrow_dataset_jni_JniWrapper_inspec
   std::shared_ptr<arrow::dataset::DatasetFactory> d =
       dataset_factory_holder_.Lookup(dataset_factor_id);
   JNI_ASSIGN_OR_THROW(std::shared_ptr<arrow::Schema> schema, d->Inspect())
+  if (schema == nullptr) {
+    return nullptr;
+  }
   return ToSchemaByteArray(env, schema);
 }
 

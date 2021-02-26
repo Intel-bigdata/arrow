@@ -147,6 +147,15 @@ public class NativeDatasetTest {
   }
 
   @Test
+  public void testS3fs() {
+    String path = "s3://intel-bigdata/2020/06";
+    DatasetFactory discovery = new SingleFileDatasetFactory(
+        new RootAllocator(Long.MAX_VALUE), NativeMemoryPool.getDefault(), FileFormat.PARQUET, FileSystem.S3FS,
+        path);
+    testDatasetFactoryEndToEnd(discovery, 1, 10, 1000);
+  }
+
+  @Test
   public void testScanner() throws Exception {
     String path = sampleParquet();
     RootAllocator allocator = new RootAllocator(Long.MAX_VALUE);

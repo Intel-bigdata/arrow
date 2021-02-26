@@ -22,7 +22,8 @@ package org.apache.arrow.dataset.file;
  */
 public enum FileSystem {
   LOCAL(0),
-  HDFS(1);
+  HDFS(1),
+  S3FS(2);
 
   private int id;
 
