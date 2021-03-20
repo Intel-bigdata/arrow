@@ -145,7 +145,7 @@ struct GetRequest {
 
 PlasmaStore::PlasmaStore(asio::io_context& io_context, std::string directory,
                          bool hugepages_enabled, const std::string& stream_name,
-                         std::shared_ptr<ExternalStore> external_store)
+                         std::shared_ptr<ExternalStore> external_store, int64_t k)
     : eviction_policy_(&store_info_, PlasmaAllocator::GetFootprintLimit()),
       external_store_(external_store),
       io_context_(io_context),
@@ -158,6 +158,7 @@ PlasmaStore::PlasmaStore(asio::io_context& io_context, std::string directory,
       ARROW_LOG(ERROR) << "RegisterEvictionPolicy failed" ;
     }
   }
+  this->LRU_K = k;
   store_info_.directory = directory;
   store_info_.hugepages_enabled = hugepages_enabled;
   store_info_.objects.reserve(50000);
@@ -259,8 +260,19 @@ PlasmaError PlasmaStore::CreateObject(const ObjectID& object_id, bool evict_if_f
                                       int device_num,
                                       const std::shared_ptr<ClientConnection>& client,
                                       PlasmaObject* result) {
-  ARROW_LOG(DEBUG) << "creating object " << object_id.hex();
+  std::string objectHexString = object_id.hex();
 
+  if(LRU_K > 1) {
+    if (objectHitCount.find(objectHexString) == objectHitCount.end()) objectHitCount.insert(make_pair(objectHexString, 0));
+    auto objHitCnt = objectHitCount.find(object_id.hex());
+    objHitCnt->second += 1;
+    if(objectHitCount.find(objectHexString)->second < LRU_K) {
+      ARROW_LOG(DEBUG) << "object: " << objectHexString << " hit count not reached LRU-K = " << LRU_K;
+      return PlasmaError::HitCountNotReachedLRUK;
+    }
+  }
+
+  ARROW_LOG(DEBUG) << "creating object " << objectHexString;
   auto entry = GetObjectTableEntry(&store_info_, object_id);
   if (entry != nullptr) {
     // There is already an object with the same ID in the Plasma Store, so
@@ -566,8 +578,19 @@ ObjectStatus PlasmaStore::ContainsObject(
     const ObjectID& object_id, const std::shared_ptr<ClientConnection>& client) {
   auto entry = GetObjectTableEntry(&store_info_, object_id);
   ObjectStatus status = ObjectStatus::OBJECT_NOT_FOUND;
+  plasma::total += 1;
+  if (!entry) {
+    plasma::miss += 1;
+    ARROW_LOG(DEBUG) << "total: " << total;
+    ARROW_LOG(DEBUG) << "miss: " << miss;
+    ARROW_LOG(DEBUG) << "hit: " << hit;
+    return status;
+  }
+  plasma::hit += 1;
+  ARROW_LOG(DEBUG) << "total: " << total;
+  ARROW_LOG(DEBUG) << "miss: " << miss;
+  ARROW_LOG(DEBUG) << "hit: " << hit;
 
-  if (!entry) return status;
 
   {
     entry->mtx.lock();
@@ -1059,6 +1082,7 @@ class PlasmaStoreRunner {
 
   void Start(const std::string& stream_name, std::string directory,
              bool hugepages_enabled, std::shared_ptr<ExternalStore> external_store,
+             int64_t k,
              int thread_num = 1) {
     signal_set_.async_wait([this](std::error_code ec, int signal) {
       if (signal == SIGTERM) {
@@ -1071,7 +1095,7 @@ class PlasmaStoreRunner {
     });
     // Create the event loop.
     store_.reset(new PlasmaStore(io_context_, directory, hugepages_enabled, stream_name,
-                                 external_store));
+                                 external_store, k));
     plasma_config = store_->GetPlasmaStoreInfo();
     // We are using a single memory-mapped file by mallocing and freeing a single
     // large amount of space up front. According to the documentation,
@@ -1125,7 +1149,8 @@ int main(int argc, char* argv[]) {
   int64_t system_memory = -1;
   int thread_num = 1;
   int c;
-  while ((c = getopt(argc, argv, "s:m:d:e:t:h")) != -1) {
+  int64_t lruk = 1;
+  while ((c = getopt(argc, argv, "s:k:m:d:e:t:h")) != -1) {
     switch (c) {
       case 'd':
         plasma_directory = std::string(optarg);
@@ -1141,6 +1166,13 @@ int main(int argc, char* argv[]) {
         break;
       case 't': {
         thread_num = atoi(optarg);
+        break;
+      }
+      case 'k': {
+        char lruk_num;
+        int k = sscanf(optarg, "%" SCNd64 "%c", &lruk, &lruk_num);
+        ARROW_CHECK(k == 1);
+        ARROW_LOG(INFO) << "LRU_K is set to " << lruk;
         break;
       }
       case 'm': {
@@ -1222,7 +1254,7 @@ int main(int argc, char* argv[]) {
   ARROW_LOG(DEBUG) << "starting server listening on " << stream_name;
   plasma::g_runner.reset(new plasma::PlasmaStoreRunner());
   plasma::g_runner->Start(stream_name, plasma_directory, hugepages_enabled,
-                          external_store, thread_num);
+                          external_store, lruk, thread_num);
   plasma::g_runner->Shutdown();
   plasma::g_runner = nullptr;
 

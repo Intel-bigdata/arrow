@@ -38,6 +38,10 @@ class Status;
 
 namespace plasma {
 
+static long total = 0;
+static long hit = 0;
+static long miss = 0;
+
 namespace flatbuf {
 enum class PlasmaError;
 }  // namespace flatbuf
@@ -57,9 +61,15 @@ class PlasmaStore {
  public:
   PlasmaStore(asio::io_context& main_context, std::string directory,
               bool hugepages_enabled, const std::string& stream_name,
-              std::shared_ptr<ExternalStore> external_store);
+              std::shared_ptr<ExternalStore> external_store, int64_t k);
 
   ~PlasmaStore();
+
+  // LRU-K
+  int64_t LRU_K = 1;
+
+  //record every object's access count, if larger than k, move it to cache
+  std::unordered_map <std::string, int> objectHitCount;
 
   /// Get a const pointer to the internal PlasmaStoreInfo object.
   const PlasmaStoreInfo* GetPlasmaStoreInfo();
