@@ -87,7 +87,7 @@
     "jest": "24.8.0",
     "jest-environment-node-debug": "2.0.0",
     "jest-silent-reporter": "0.1.2",
-    "json": "9.0.6",
+    "json": "10.0.0",
     "lerna": "3.10.7",
     "memfs": "2.15.2",
     "mkdirp": "0.5.1",
